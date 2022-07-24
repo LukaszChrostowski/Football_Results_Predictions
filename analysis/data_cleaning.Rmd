@@ -1,0 +1,75 @@
+---
+title: Data cleaning
+output:
+  workflowr::wflow_html:
+    toc: false
+---
+
+
+The following script presents data cleaning on data from polish football league season 2012/13.
+
+```{r}
+load("C:\\Users\\Acer\\Desktop\\scrapedData2012and2013.Rdata")
+```
+
+Now are building the function to clean this data. First of all we need to load required packages.
+
+
+```{r, message = FALSE, warning = FALSE}
+library(lubridate)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(knitr)
+```
+
+**Head of the scraped data**
+
+```{r, results = 'asis'}
+kable(scrapedData2012and2013[1:5,], caption = "data from 2012/13 season")
+```
+
+**Implementation and description of the function**
+
+
+```{r}
+
+data_cleaning <- function(data){
+  
+  data <- as.data.frame(data)
+  
+  data$Data <- data$Data %>% str_replace_all("[.]", "/") %>% dmy_hm() # by default column Data is not a date type so we need to change it in correct way using stringr and lubridate packages
+  
+  data$`Posiadanie piłkiGospodarz` <- data$`Posiadanie piłkiGospodarz` %>% str_replace_all("%", "") %>% as.numeric()
+  data$`Posiadanie piłkiGość` <- data$`Posiadanie piłkiGość` %>% str_replace_all("%", "") %>% as.numeric() # replace "%" on "" in columns Posiadanie piłkiGospodarz and Posiadanie piłkiGość in order to make them numeric ones
+  
+  data$`Żółte kartkiGospodarz` <- data$`Żółte kartkiGospodarz` %>% str_replace("..%", "")
+  data$`Żółte kartkiGość` <- data$`Żółte kartkiGość` %>% str_replace("..%", "") # similar thing with the next columns, because of mistakes in web scraping
+  
+  numeric_data <- data %>%
+    select(-c("Gospodarz", "Gość", "Wynik", "Data")) %>% 
+    apply(2, function(x) as.numeric(x)) %>% 
+    as.data.frame() # convert character columns to numeric, where possible
+  
+  data <- numeric_data %>%
+    merge(data %>% select(c("Gospodarz", "Gość", "Wynik", "Data")) %>% as.data.frame(), by = NULL) %>%
+    as_tibble() # merge numeric and character data frames and saving it as a tibble 
+  
+  data$`Posiadanie piłkiGospodarz` <- na_if(data$`Posiadanie piłkiGospodarz`, 0)
+  data$`Posiadanie piłkiGość` <- na_if(data$`Posiadanie piłkiGość`, 0) # appropriate marking NULL records in columns Posiadanie piłkiGospodarz and Posiadanie piłkiGość, because want to have "NA" rather than "0".
+  
+  return(data)
+}
+
+
+```
+
+
+
+**Using function on the scraped data**
+
+```{r, results = 'asis'}
+data <- data_cleaning(scrapedData2012and2013)
+kable(data[1:5,], caption = "data from 2012/13 season")
+```
+
