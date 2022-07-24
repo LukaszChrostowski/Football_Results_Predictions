@@ -53,9 +53,7 @@ data_cleaning <- function(data){
     apply(2, function(x) as.numeric(x)) %>% 
     as.data.frame() # convert character columns to numeric, where possible
   
-  data <- numeric_data %>%
-    merge(data %>% select(c("Gospodarz", "Gość", "Wynik", "Data")) %>% as.data.frame(), by = NULL) %>%
-    as_tibble() # merge numeric and character data frames and saving it as a tibble 
+ data <- tibble(data %>% select(c("Gospodarz", "Gość", "Wynik", "Data")) %>% as.data.frame(), numeric_data) # merge numeric and character data frames and saving it as a tibble  
   
   data$`Posiadanie piłkiGospodarz` <- na_if(data$`Posiadanie piłkiGospodarz`, 0)
   data$`Posiadanie piłkiGość` <- na_if(data$`Posiadanie piłkiGość`, 0) # appropriate marking NULL records in columns Posiadanie piłkiGospodarz and Posiadanie piłkiGość, because want to have "NA" rather than "0".
