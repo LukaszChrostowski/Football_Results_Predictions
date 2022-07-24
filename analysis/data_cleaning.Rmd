@@ -46,7 +46,7 @@ data_cleaning <- function(data){
   data$`Żółte kartkiGospodarz` <- data$`Żółte kartkiGospodarz` %>% str_replace("..%", "")
   data$`Żółte kartkiGość` <- data$`Żółte kartkiGość` %>% str_replace("..%", "") # similar thing with the next columns, because of mistakes in web scraping
   
-  data$Wynik <- data$Wynik %>% as.factor()
+  data$Wynik <- data$Wynik %>% as.factor() # saving the "Wynik" column as a factor class
   
   numeric_data <- data %>%
     select(-c("Gospodarz", "Gość", "Wynik", "Data")) %>% 
