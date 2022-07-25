@@ -2,14 +2,14 @@
 title: "webscraping"
 author: "Kertoo"
 date: "2022-07-24"
-output: workflowr::wflow_html
-editor_options:
-  chunk_output_type: console
+output:
+  workflowr::wflow_html:
+    toc: false
 ---
 
 
 
-The following script demonstrates the scraping of 2012/2013 season data on matches of polish football league ekstraklasa
+The following script demonstrates the scraping of 2012/2013 season data on matches of polish football league ekstraklasa. Scraping for other season is basically the same and will not be reported but the code can be found in [code](https://github.com/LukaszChrostowski/Football_Results_Predictions/tree/master/code) folder at github.
 
 
 ```{r}
@@ -77,16 +77,22 @@ wbscrape <- function() {
       obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
     }
     outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
-    outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
-    matchNames <- c(matchNames, outcome[2] %>% str_trim())
-    outcome1 <- outcome1[!is.na(outcome1)]
-    valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name","stat__homeValue")$getElementText()}) %>% unlist()
-    names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-    valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
-    valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
-    names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-    valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
-    participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
+  outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
+  matchNames <- c(matchNames, outcome[2] %>% str_trim())
+  outcome1 <- outcome1[!is.na(outcome1)]
+  valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
+  names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
+  v1 <- rep(0, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)] <- valuesHome
+  valuesHome <- v1
+  valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
+  names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
+  v1 <- rep(0, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)] <- valuesAway
+  valuesAway <- v1
+  participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
     if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała
       if (which(participants == "B") == 3) {                                         # (podbeskidzie B-B)
         participants <- c(participants[1], paste0(participants[2], participants[3]))

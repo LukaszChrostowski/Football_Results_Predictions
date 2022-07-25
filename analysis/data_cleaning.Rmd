@@ -73,7 +73,8 @@ skimr::skim(data)
 ```
 
 ```{r, echo = FALSE}
-file <- paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/output/2012and2013processed.Rdata")
-save(data, file = file)
+proccessed2012and2013 <- data
+file <- paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/output/processed2012and2013.Rdata")
+save(proccessed2012and2013, file = file)
 ```
 

@@ -31,9 +31,6 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
-<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
-<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
-<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -237,69 +234,6 @@ $(document).ready(function () {
 
 
 
-<style type="text/css">
-
-#TOC {
-  margin: 25px 0px 20px 0px;
-}
-@media (max-width: 768px) {
-#TOC {
-  position: relative;
-  width: 100%;
-}
-}
-
-@media print {
-.toc-content {
-  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
-  float: right;
-}
-}
-
-.toc-content {
-  padding-left: 30px;
-  padding-right: 40px;
-}
-
-div.main-container {
-  max-width: 1200px;
-}
-
-div.tocify {
-  width: 20%;
-  max-width: 260px;
-  max-height: 85%;
-}
-
-@media (min-width: 768px) and (max-width: 991px) {
-  div.tocify {
-    width: 25%;
-  }
-}
-
-@media (max-width: 767px) {
-  div.tocify {
-    width: 100%;
-    max-width: none;
-  }
-}
-
-.tocify ul, .tocify li {
-  line-height: 20px;
-}
-
-.tocify-subheader .tocify-item {
-  font-size: 0.90em;
-}
-
-.tocify .list-group-item {
-  border-radius: 0px;
-}
-
-
-</style>
-
-
 
 </head>
 
@@ -307,16 +241,6 @@ div.tocify {
 
 
 <div class="container-fluid main-container">
-
-
-<!-- setup 3col/9col grid for toc_float and main content  -->
-<div class="row">
-<div class="col-xs-12 col-sm-4 col-md-3">
-<div id="TOC" class="tocify">
-</div>
-</div>
-
-<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -424,10 +348,10 @@ changes </a>
 <div id="strongRMarkdownfilestronguncommittedchanges"
 class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown is untracked by Git. To know which version of the R
-Markdown file created these results, you’ll want to first commit it to
-the Git repo. If you’re still working on the analysis, you can ignore
-this warning. When you’re finished, you can run
+<p>The R Markdown file has unstaged changes. To know which version of
+the R Markdown file created these results, you’ll want to first commit
+it to the Git repo. If you’re still working on the analysis, you can
+ignore this warning. When you’re finished, you can run
 <code>wflow_publish</code> to commit the R Markdown file and build the
 HTML.</p>
 </div>
@@ -520,15 +444,15 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomLukaszChrostowskiFootballResultsPredictionstree5007f09bf536a6d3ea95113862c93ca112c51dc6targetblank5007f09a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomLukaszChrostowskiFootballResultsPredictionstree0884ff26a38ef25fb4964bbc8a49723adeec9c0btargetblank0884ff2a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/LukaszChrostowski/Football_Results_Predictions/tree/5007f09bf536a6d3ea95113862c93ca112c51dc6" target="_blank">5007f09</a>
+<a href="https://github.com/LukaszChrostowski/Football_Results_Predictions/tree/0884ff26a38ef25fb4964bbc8a49723adeec9c0b" target="_blank">0884ff2</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomLukaszChrostowskiFootballResultsPredictionstree5007f09bf536a6d3ea95113862c93ca112c51dc6targetblank5007f09a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomLukaszChrostowskiFootballResultsPredictionstree0884ff26a38ef25fb4964bbc8a49723adeec9c0btargetblank0884ff2a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -538,7 +462,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/LukaszChrostowski/Football_Results_Predictions/tree/5007f09bf536a6d3ea95113862c93ca112c51dc6" target="_blank">5007f09</a>.
+<a href="https://github.com/LukaszChrostowski/Football_Results_Predictions/tree/0884ff26a38ef25fb4964bbc8a49723adeec9c0b" target="_blank">0884ff2</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -557,19 +481,16 @@ Ignored files:
     Ignored:    .Rproj.user/
 
 Untracked files:
-    Untracked:  analysis/data_cleaning.Rmd
-    Untracked:  analysis/webscraping.Rmd
-    Untracked:  data/scrapedData2012and2013.Rdata
-    Untracked:  data/scrapedData2013and2014.Rdata
-    Untracked:  output/2012and2013processed.Rdata
+    Untracked:  output/processed2012and2013.Rdata
 
 Unstaged changes:
-    Modified:   analysis/index.Rmd
-    Conflicted: code/ScrapingWNZ.R
-
-Staged changes:
     Modified:   .RData
-    Modified:   analysis/index.Rmd
+    Modified:   analysis/data_cleaning.Rmd
+    Modified:   analysis/webscraping.Rmd
+    Deleted:    code/1st.R
+    Modified:   code/ScrapingWNZ.R
+    Modified:   data/scrapedData2012and2013.Rdata
+    Deleted:    output/2012and2013processed.Rdata
 
 </code></pre>
 <p>
@@ -584,16 +505,86 @@ have uncommitted changes.
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
+
 <p>
-There are no past versions. Publish this analysis with
-<code>wflow_publish()</code> to start tracking its development.
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/webscraping.Rmd</code>) and HTML
+(<code>docs/webscraping.html</code>) files. If you’ve configured a
+remote Git repository (see <code>?wflow_git_remote</code>), click on the
+hyperlinks in the table below to view the files as they were in that
+past version.
 </p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/LukaszChrostowski/Football_Results_Predictions/blob/0884ff26a38ef25fb4964bbc8a49723adeec9c0b/analysis/webscraping.Rmd" target="_blank">0884ff2</a>
+</td>
+<td>
+Kertoo
+</td>
+<td>
+2022-07-24
+</td>
+<td>
+corrections for data cleaning and slight polishing of workflowr files +
+saving proccesed data file in output
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/LukaszChrostowski/Football_Results_Predictions/0884ff26a38ef25fb4964bbc8a49723adeec9c0b/docs/webscraping.html" target="_blank">0884ff2</a>
+</td>
+<td>
+Kertoo
+</td>
+<td>
+2022-07-24
+</td>
+<td>
+corrections for data cleaning and slight polishing of workflowr files +
+saving proccesed data file in output
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 <hr>
 </div>
 </div>
 </div>
 <p>The following script demonstrates the scraping of 2012/2013 season
-data on matches of polish football league ekstraklasa</p>
+data on matches of polish football league ekstraklasa. Scraping for
+other season is basically the same and will not be reported but the code
+can be found in <a
+href="https://github.com/LukaszChrostowski/Football_Results_Predictions/tree/master/code">code</a>
+folder at github.</p>
 <pre class="r"><code># NOT RUN
 wbscrape &lt;- function() {
   
@@ -658,16 +649,22 @@ wbscrape &lt;- function() {
       obj1 &lt;- remDr$findElements(using = &quot;class name&quot;, &quot;stat__category&quot;) # sometimes you need to double click
     }
     outcome &lt;- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = &quot;|&quot;, fixed = TRUE)[[1]]
-    outcome1 &lt;- suppressWarnings((outcome[1] %&gt;% strsplit(split = &quot;&quot;))[[1]] %&gt;% as.numeric())
-    matchNames &lt;- c(matchNames, outcome[2] %&gt;% str_trim())
-    outcome1 &lt;- outcome1[!is.na(outcome1)]
-    valuesHome &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;,&quot;stat__homeValue&quot;)$getElementText()}) %&gt;% unlist()
-    names(valuesHome) &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;, &quot;stat__categoryName&quot;)$getElementText()}) %&gt;% unlist()
-    valuesHome &lt;- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
-    valuesAway &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;, &quot;stat__awayValue&quot;)$getElementText()}) %&gt;% unlist()
-    names(valuesAway) &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;, &quot;stat__categoryName&quot;)$getElementText()}) %&gt;% unlist()
-    valuesAway &lt;- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
-    participants &lt;- stringr::str_trim(strsplit(outcome[2], split = &quot;-&quot;)[[1]], side = &quot;both&quot;)
+  outcome1 &lt;- suppressWarnings((outcome[1] %&gt;% strsplit(split = &quot;&quot;))[[1]] %&gt;% as.numeric())
+  matchNames &lt;- c(matchNames, outcome[2] %&gt;% str_trim())
+  outcome1 &lt;- outcome1[!is.na(outcome1)]
+  valuesHome &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;, &quot;stat__homeValue&quot;)$getElementText()}) %&gt;% unlist()
+  names(valuesHome) &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;, &quot;stat__categoryName&quot;)$getElementText()}) %&gt;% unlist()
+  v1 &lt;- rep(0, length(statNames))
+  names(v1) &lt;- statNames
+  v1[names(v1) %in% names(valuesHome)] &lt;- valuesHome
+  valuesHome &lt;- v1
+  valuesAway &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;, &quot;stat__awayValue&quot;)$getElementText()}) %&gt;% unlist()
+  names(valuesAway) &lt;- sapply(obj1, FUN = function(x) {x$findChildElement(using = &quot;class name&quot;, &quot;stat__categoryName&quot;)$getElementText()}) %&gt;% unlist()
+  v1 &lt;- rep(0, length(statNames))
+  names(v1) &lt;- statNames
+  v1[names(v1) %in% names(valuesAway)] &lt;- valuesAway
+  valuesAway &lt;- v1
+  participants &lt;- stringr::str_trim(strsplit(outcome[2], split = &quot;-&quot;)[[1]], side = &quot;both&quot;)
     if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała
       if (which(participants == &quot;B&quot;) == 3) {                                         # (podbeskidzie B-B)
         participants &lt;- c(participants[1], paste0(participants[2], participants[3]))
@@ -729,14 +726,14 @@ loaded via a namespace (and not attached):
  [1] Rcpp_1.0.9       compiler_4.1.2   pillar_1.8.0     bslib_0.4.0     
  [5] later_1.3.0      git2r_0.30.1     jquerylib_0.1.4  tools_4.1.2     
  [9] getPass_0.2-2    digest_0.6.29    jsonlite_1.8.0   evaluate_0.15   
-[13] tibble_3.1.7     lifecycle_1.0.1  pkgconfig_2.0.3  rlang_1.0.4     
-[17] cli_3.2.0        rstudioapi_0.13  yaml_2.3.5       xfun_0.31       
+[13] tibble_3.1.8     lifecycle_1.0.1  pkgconfig_2.0.3  rlang_1.0.4     
+[17] cli_3.3.0        rstudioapi_0.13  yaml_2.3.5       xfun_0.31       
 [21] fastmap_1.1.0    httr_1.4.3       stringr_1.4.0    knitr_1.39      
-[25] sass_0.4.2       fs_1.5.2         vctrs_0.4.1      rprojroot_2.0.3 
+[25] fs_1.5.2         vctrs_0.4.1      sass_0.4.2       rprojroot_2.0.3 
 [29] glue_1.6.2       R6_2.5.1         processx_3.7.0   fansi_1.0.3     
 [33] rmarkdown_2.14   callr_3.7.1      magrittr_2.0.3   whisker_0.4     
-[37] ps_1.7.1         promises_1.2.0.1 htmltools_0.5.3  ellipsis_0.3.2  
-[41] httpuv_1.6.5     utf8_1.2.2       stringi_1.7.6    cachem_1.0.6    </code></pre>
+[37] ps_1.7.1         promises_1.2.0.1 htmltools_0.5.3  httpuv_1.6.5    
+[41] utf8_1.2.2       stringi_1.7.6    cachem_1.0.6    </code></pre>
 </div>
 
 
@@ -755,8 +752,6 @@ footer is added to webpages before the MathJax javascript. -->
 
 
 
-</div>
-</div>
 
 </div>
 
@@ -789,35 +784,6 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
-<script>
-$(document).ready(function ()  {
-
-    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
-    $('.unlisted.unnumbered').addClass('toc-ignore')
-
-    // move toc-ignore selectors from section div to header
-    $('div.section.toc-ignore')
-        .removeClass('toc-ignore')
-        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
-
-    // establish options
-    var options = {
-      selectors: "h1,h2,h3",
-      theme: "bootstrap3",
-      context: '.toc-content',
-      hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
-      },
-      ignoreSelector: ".toc-ignore",
-      scrollTo: 0
-    };
-    options.showAndHide = true;
-    options.smoothScroll = true;
-
-    // tocify
-    var toc = $("#TOC").tocify(options).data("toc-tocify");
-});
-</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
