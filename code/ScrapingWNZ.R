@@ -1216,6 +1216,10 @@ remDr$navigate(url)
 # click on cookies info:
 cookies <- remDr$findElement(using = "xpath", '//*[@id="onetrust-reject-all-handler"]')
 cookies$clickElement()
+# click on more info:
+moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
+moreInfo$clickElement()
+moreInfo$clickElement() # may possibly cause an error if 
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
