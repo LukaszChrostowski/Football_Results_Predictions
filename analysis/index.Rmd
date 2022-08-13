@@ -12,5 +12,5 @@ Site for football predictions.
 
 The work done in the project up until now:
 
-- [Webscraping](webscraping.html)
+- Data collection form web (in code/)
 - [Data cleaning](data_cleaning.html)

@@ -3,9 +3,8 @@
 #install.packages("RSelenium") you also need to install java for this
 #install.packages("netstat") only one function is needed
 
-# TODO::
-## - make this script fancy by making it into gigantic loop
-## - determine the source of equivalence of obj1 and list()
+# if any for loop breaks (which happens often due to instability of selenium) try:
+# for (m in subSiteUrl[(which(subSiteUrl == m)):length(subSiteUrl)]) {
 
 # for now this is now very elegant and likely no correct but will be improved in the future
 
@@ -37,7 +36,8 @@ moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
-  sapply(obj$findChildElements(using = "class name", "event__match"), FUN = function(x) {x$getElementAttribute("id")}) %>%
+  sapply(obj$findChildElements(using = "class name", "event__match"), 
+         FUN = function(x) {x$getElementAttribute("id")}) %>%
   unlist()
 subSiteUrl <- sapply(subSiteUrl, FUN = function(x) {substr(x, start = 5, stop = 12)})
 subSiteUrl <- paste0("https://www.wynikinazywo.pl/mecz/", subSiteUrl, "/#/szczegoly-meczu/statystyki-meczu/0")
@@ -61,8 +61,8 @@ statNames <- c(
   "Auty bramkowe"
 )
 for (m in subSiteUrl[1:114]) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   obj1 <- remDr$findElements(using = "class name", "stat__category")
@@ -75,15 +75,15 @@ for (m in subSiteUrl[1:114]) {# Not all maches in 2012/2013 have match statistic
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  v1 <- rep(0, length(statNames))
+  v1 <- rep(NA, length(statNames))
   names(v1) <- statNames
-  v1[names(v1) %in% names(valuesHome)] <- valuesHome
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
   valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  v1 <- rep(0, length(statNames))
+  v1 <- rep(NA, length(statNames))
   names(v1) <- statNames
-  v1[names(v1) %in% names(valuesAway)] <- valuesAway
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
   valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała
@@ -97,7 +97,7 @@ for (m in subSiteUrl[1:114]) {# Not all maches in 2012/2013 have match statistic
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -105,7 +105,7 @@ for (m in subSiteUrl[1:114]) {# Not all maches in 2012/2013 have match statistic
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -116,6 +116,8 @@ for (m in subSiteUrl[1:114]) {# Not all maches in 2012/2013 have match statistic
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2012and2013 <- K
+save(scrapedData2012and2013, file = "data/scrapedData2012and2013.Rdata")
 
 # 2013/2014 ####
 
@@ -137,11 +139,12 @@ cookies$clickElement()
 # click on more info:
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
-moreInfo$clickElement() # may possibly cause an error if 
+moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
-  sapply(obj$findChildElements(using = "class name", "event__match"), FUN = function(x) {x$getElementAttribute("id")}) %>%
+  sapply(obj$findChildElements(using = "class name", "event__match"), 
+         FUN = function(x) {x$getElementAttribute("id")}) %>%
   unlist()
 subSiteUrl <- sapply(subSiteUrl, FUN = function(x) {substr(x, start = 5, stop = 12)})
 subSiteUrl <- paste0("https://www.wynikinazywo.pl/mecz/", subSiteUrl, "/#/szczegoly-meczu/statystyki-meczu/0")
@@ -171,9 +174,9 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   obj1 <- remDr$findElements(using = "class name", "stat__category")
@@ -187,15 +190,15 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
   if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
-  v1 <- rep(0, length(statNames))
+  v1 <- rep(NA, length(statNames))
   names(v1) <- statNames
-  v1[names(v1) %in% names(valuesHome)] <- valuesHome
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
   valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  v1 <- rep(0, length(statNames))
+  v1 <- rep(NA, length(statNames))
   names(v1) <- statNames
-  v1[names(v1) %in% names(valuesAway)] <- valuesAway
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
   valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała
@@ -209,7 +212,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -217,7 +220,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -228,6 +231,8 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2013and2014 <- K
+save(scrapedData2013and2014, file = "data/scrapedData2013and2014.Rdata")
 
 
 # 2014/2015 ####
@@ -250,7 +255,7 @@ cookies$clickElement()
 # click on more info:
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
-moreInfo$clickElement() # may possibly cause an error if 
+moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
@@ -284,9 +289,9 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   obj1 <- remDr$findElements(using = "class name", "stat__category")
@@ -299,10 +304,17 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała
     if (which(participants == "B") == 3) {                                         # (podbeskidzie B-B)
@@ -315,7 +327,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -323,7 +335,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -334,6 +346,8 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2014and2015 <- K
+save(scrapedData2014and2015, file = "data/scrapedData2014and2015.Rdata")
 
 # 2015/2016 ####
 
@@ -355,7 +369,7 @@ cookies$clickElement()
 # click on more info:
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
-moreInfo$clickElement() # may possibly cause an error if 
+moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
@@ -389,23 +403,32 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
-  Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -437,7 +460,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -445,7 +468,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -456,6 +479,8 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2015and2016 <- K
+save(scrapedData2015and2016, file = "data/scrapedData2015and2016.Rdata")
 
 # 2016/2017 ####
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2016-2017/wyniki/"
@@ -477,7 +502,7 @@ cookies$clickElement()
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
 Sys.sleep(.5)
-moreInfo$clickElement() # may possibly cause an error if 
+moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
@@ -511,23 +536,33 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -559,7 +594,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -567,7 +602,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -578,6 +613,8 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2016and2017 <- K
+save(scrapedData2016and2017, file = "data/scrapedData2016and2017.Rdata")
 
 # 2017/2018 ####
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2017-2018/wyniki/"
@@ -598,7 +635,6 @@ cookies$clickElement()
 # click on more info:
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
-Sys.sleep(.5)
 moreInfo$clickElement() # may possibly cause an error if 
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
@@ -633,23 +669,33 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -681,7 +727,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -689,7 +735,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -700,8 +746,10 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2017and2018 <- K
+save(scrapedData2017and2018, file = "data/scrapedData2017and2018.Rdata")
 
-# 2018/2019####
+# 2018/2019 ####
 
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2018-2019/wyniki/"
 
@@ -722,7 +770,7 @@ cookies$clickElement()
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
 Sys.sleep(.5)
-moreInfo$clickElement() # may possibly cause an error if 
+moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
@@ -757,23 +805,33 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -805,7 +863,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -813,7 +871,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -824,9 +882,10 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2018and2019 <- K
+save(scrapedData2018and2019, file = "data/scrapedData2018and2019.Rdata")
 
-
-# 2019/2020####
+# 2019/2020 ####
 
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2019-2020/wyniki/"
 
@@ -873,7 +932,10 @@ statNames <- c(
   "Ataki",
   "Niebezpieczne ataki",
   "Żółte kartki",
-  "Czerwone kartki"         
+  "Czerwone kartki",
+  "Rzuty wolne",
+  "Wrzuty z autu",
+  "Podania"
 )
 # for (m in subSiteUrl) {
 #   print(m)
@@ -881,23 +943,33 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -929,7 +1001,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -937,7 +1009,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -948,8 +1020,10 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2019and2020 <- K
+save(scrapedData2019and2020, file = "data/scrapedData2019and2020.Rdata")
 
-# 2020/2021####
+# 2020/2021 ####
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2020-2021/wyniki/"
 
 seleniumServer <- rsDriver(browser = "chrome",
@@ -969,7 +1043,7 @@ cookies$clickElement()
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
 Sys.sleep(.5)
-moreInfo$clickElement() # may possibly cause an error if 
+moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
 subSiteUrl <- 
@@ -995,7 +1069,8 @@ statNames <- c(
   "Ataki",
   "Niebezpieczne ataki",
   "Żółte kartki",
-  "Czerwone kartki"         
+  "Czerwone kartki",
+  "Strzały zablokowane"
 )
 # for (m in subSiteUrl) {
 #   print(m)
@@ -1004,22 +1079,32 @@ statNames <- c(
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
 for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -1051,7 +1136,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -1059,7 +1144,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -1070,6 +1155,9 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2020and2021 <- K
+save(scrapedData2020and2021, file = "data/scrapedData2020and2021.Rdata")
+
 # 2021/2022 ####
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2021-2022/wyniki/"
 
@@ -1089,9 +1177,7 @@ cookies$clickElement()
 # click on more info:
 moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
 moreInfo$clickElement()
-Sys.sleep(.5)
 moreInfo$clickElement()
-Sys.sleep(.5)
 moreInfo$clickElement()
 # get urls to match statistics
 obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
@@ -1132,23 +1218,33 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+for (m in subSiteUrl) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -1180,7 +1276,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -1188,7 +1284,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -1199,6 +1295,8 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2021and2022 <- K
+save(scrapedData2021and2022, file = "data/scrapedData2021and2022.Rdata")
 
 # 2022/2023 ####
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2022-2023/wyniki/"
@@ -1259,22 +1357,32 @@ statNames <- c(
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
 for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
-  print(m)                    # sometimes selenium breajs because of cookies it is possible to just start the loop again
-  remDr$navigate(m)           # beggining at which(subSiteUrl == m) no issues should be present
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
   Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
+  if (length(obj1) == 0) {
+    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+  }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
   valuesHome <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__homeValue")$getElementText()}) %>% unlist()
   names(valuesHome) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesHome <- ifelse(statNames %in% names(valuesHome), valuesHome, 0)
+  if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
   valuesAway <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__awayValue")$getElementText()}) %>% unlist()
   names(valuesAway) <- sapply(obj1, FUN = function(x) {x$findChildElement(using = "class name", "stat__categoryName")$getElementText()}) %>% unlist()
-  valuesAway <- ifelse(statNames %in% names(valuesAway), valuesAway, 0)
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
   participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
   if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
     if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
@@ -1306,7 +1414,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   }
   
   if (is.null(K)) {
-    K <- c(valuesHome, valuesAway,
+    K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
            ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
            remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
@@ -1314,7 +1422,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   } else {
     K <- data.frame(
       K,
-      c(valuesHome, valuesAway,
+      c(valuesHome[statNames], valuesAway[statNames],
         outcome1[1], outcome1[2], participants,
         ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
         remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
@@ -1325,3 +1433,5 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
 K <- t(K)
 colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
 rownames(K) <- matchNames
+scrapedData2022and2023 <- K
+save(scrapedData2022and2023, file = "data/scrapedData2022and2023.Rdata")
