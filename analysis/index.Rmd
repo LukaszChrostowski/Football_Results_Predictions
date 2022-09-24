@@ -8,4 +8,9 @@ editor_options:
   chunk_output_type: console
 ---
 
-Welcome to my research website.
+Site for football predictions.
+
+The work done in the project up until now:
+
+- Data collection form web (in code/)
+- [Data cleaning](data_cleaning.html)

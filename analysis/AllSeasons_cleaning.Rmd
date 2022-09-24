@@ -1,0 +1,286 @@
+---
+title: "data_merging"
+author: "Łukasz Chrostowski"
+date: "2022-08-03"
+output: html_document
+---
+
+```{r, echo=FALSE}
+# data loading
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2012and2013.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2013and2014.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2014and2015.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2015and2016.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2016and2017.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2017and2018.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2018and2019.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2019and2020.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2020and2021.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2021and2022.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2022and2023.Rdata"))
+
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/table_data.Rdata")) # load table for each season
+
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/number_of_seasons_by_each_club.Rdata")) # load data of seasons number for each club
+
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+# install required packages
+library(dplyr)
+library(data.table)
+library(visdat)
+library(lubridate)
+library(tidyr)
+library(stringr)
+library(knitr)
+```
+
+```{r}
+# number of data columns for each season
+dataframes <- list(scrapedData2012and2013, scrapedData2013and2014, scrapedData2014and2015, scrapedData2015and2016,
+               scrapedData2016and2017, scrapedData2017and2018, scrapedData2018and2019, scrapedData2019and2020,
+               scrapedData2020and2021, scrapedData2021and2022, scrapedData2022and2023)
+
+dataframes_vector <- c("scrapedData2012and2013", "scrapedData2013and2014", "scrapedData2014and2015", "scrapedData2015and2016",
+                       "scrapedData2016and2017", "scrapedData2017and2018", "scrapedData2018and2019", "scrapedData2019and2020",
+                       "scrapedData2020and2021", "scrapedData2021and2022", "scrapedData2022and2023")
+
+
+columns_number <- vector("numeric", length = length(dataframes))
+
+  
+for(i in 1:11){
+    columns_number[i] <- length(colnames(dataframes[[i]]))
+  }
+  
+
+(df <- data.frame(dataframes_vector, columns_number)) 
+
+```
+
+```{r}
+# add Season column for each data
+my_F <- function(data, chr){
+  
+  data <- data %>% as.data.frame()
+  data$Sezon <- rep(chr, nrow(data)) %>% as.factor()
+  return(data)
+  
+}
+
+
+new_scrapedData2012and2013 <- my_F(scrapedData2012and2013, "2012/13")
+new_scrapedData2013and2014 <- my_F(scrapedData2013and2014, "2013/14")
+new_scrapedData2014and2015 <- my_F(scrapedData2014and2015, "2014/15")
+new_scrapedData2015and2016 <- my_F(scrapedData2015and2016, "2015/16")
+new_scrapedData2016and2017 <- my_F(scrapedData2016and2017, "2016/17")
+new_scrapedData2017and2018 <- my_F(scrapedData2017and2018, "2017/18")
+new_scrapedData2018and2019 <- my_F(scrapedData2018and2019, "2018/19")
+new_scrapedData2019and2020 <- my_F(scrapedData2019and2020, "2019/20")
+new_scrapedData2020and2021 <- my_F(scrapedData2020and2021, "2020/21")
+new_scrapedData2021and2022 <- my_F(scrapedData2021and2022, "2021/22")
+new_scrapedData2022and2023 <- my_F(scrapedData2022and2023, "2022/23")
+
+joined_df_12_13 <- merge(new_scrapedData2012and2013, df_11_12, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>%
+  merge(df_11_12, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_13_14 <- merge(new_scrapedData2013and2014, df_12_13, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_12_13, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_14_15 <- merge(new_scrapedData2014and2015, df_13_14, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_13_14, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_15_16 <- merge(new_scrapedData2015and2016, df_14_15, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_14_15, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_16_17 <- merge(new_scrapedData2016and2017, df_15_16, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_15_16, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_17_18 <- merge(new_scrapedData2017and2018, df_16_17, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_16_17, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_18_19 <- merge(new_scrapedData2018and2019, df_17_18, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_17_18, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_19_20 <- merge(new_scrapedData2019and2020, df_18_19, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_18_19, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_20_21 <- merge(new_scrapedData2020and2021, df_19_20, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_19_20, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_21_22 <- merge(new_scrapedData2021and2022, df_20_21, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_21_22, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_df_22_23 <- merge(new_scrapedData2022and2023, df_21_22, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_21_22, by.x = "Gość", by.y = "team", all.x = TRUE)
+
+joined_data_12_13 <- merge(joined_df_12_13, df1 %>% select(club, season12.13), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season12.13), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_13_14 <- merge(joined_df_13_14, df1 %>% select(club, season13.14), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season13.14), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_14_15 <- merge(joined_df_14_15, df1 %>% select(club, season14.15), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season14.15), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_15_16 <- merge(joined_df_15_16, df1 %>% select(club, season15.16), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season15.16), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_16_17 <- merge(joined_df_16_17, df1 %>% select(club, season16.17), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season16.17), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_17_18 <- merge(joined_df_17_18, df1 %>% select(club, season17.18), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season17.18), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_18_19 <- merge(joined_df_18_19, df1 %>% select(club, season18.19), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season18.19), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_19_20 <- merge(joined_df_19_20, df1 %>% select(club, season19.20), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season19.20), by.x = "Gość", by.y = "club", all.x = TRUE)
+joined_data_20_21 <- merge(joined_df_20_21, df1 %>% select(club, season20.21), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season20.21), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_21_22 <- merge(joined_df_21_22, df1 %>% select(club, season21.22), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season21.22), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_22_23 <- merge(joined_df_22_23, df1 %>% select(club, season22.23), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season22.23), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+```
+
+
+```{r}
+# join all seasons in one data frame
+
+joined_data_list <- list(joined_data_12_13, joined_data_13_14, joined_data_14_15, joined_data_15_16, joined_data_16_17, joined_data_17_18,      
+                         joined_df_15_16, joined_data_18_19, joined_data_19_20, joined_df_20_21, joined_df_21_22, joined_df_22_23)
+
+
+ChangeNames = function(Data)
+{
+  ind1 = grep("season.*x$", colnames(Data))
+  ind2 = grep("season.*y$", colnames(Data))
+  colnames(Data)[ind1] <- "Liczba sezonów Gospodarz"
+  colnames(Data)[ind2] <- "Liczba Gospodarz Gość"
+  return(Data)
+}
+
+joined_data_list1 <- lapply(joined_data_list, ChangeNames)
+
+all_seasons <- rbindlist(joined_data_list1, fill = TRUE)
+
+ # merging all data frames in one
+
+colnames(all_seasons)[which(colnames(all_seasons) == "place.x")] <- "Pozycja Gospodarz"
+colnames(all_seasons)[which(colnames(all_seasons) == "place.y")] <- "Pozycja Gość"
+
+skimr::skim(all_seasons)
+
+# if red/yellow cards are absent then they weren't used in the match
+all_seasons$`Żółte kartki Gospodarz`[is.na(all_seasons$`Żółte kartki Gospodarz`)] <- 0
+all_seasons$`Żółte kartki Gość`[is.na(all_seasons$`Żółte kartki Gość`)] <- 0
+all_seasons$`Czerwone kartki Gospodarz`[is.na(all_seasons$`Czerwone kartki Gospodarz`)] <- 0
+all_seasons$`Czerwone kartki Gość`[is.na(all_seasons$`Czerwone kartki Gość`)] <- 0
+
+skimr::skim(all_seasons)
+```
+
+```{r}
+# missing data in each column of data frame
+colSums(is.na(all_seasons))
+```
+
+```{r, warning=FALSE}
+data_cleaning <- function(data){
+  
+  data <- as.data.frame(data)
+  
+  # by default column Data is not a date type so we need to change it in correct way using stringr and lubridate packages
+  data$Data <- data$Data %>% str_replace_all("[.]", "[/]") %>% dmy_hm() 
+  
+  # remove "%" sign in property columns
+  data$`Posiadanie piłki Gospodarz` <- data$`Posiadanie piłki Gospodarz` %>% str_replace_all("[%]", "") %>% as.numeric()
+  data$`Posiadanie piłki Gość` <- data$`Posiadanie piłki Gość` %>% str_replace_all("[%]", "") %>% as.numeric() 
+  data$`Skuteczność podań Gospodarz` <- data$`Skuteczność podań Gospodarz` %>% str_replace_all("[%]", "") %>% as.numeric()
+  data$`Skuteczność podań Gość` <- data$`Skuteczność podań Gość` %>% str_replace_all("[%]", "") %>% as.numeric() 
+  
+  # similar thing with the next columns, because of mistakes in web scraping
+  data$`Żółte kartki Gospodarz` <- data$`Żółte kartki Gospodarz` %>% str_replace("..%", "")
+  data$`Żółte kartki Gość` <- data$`Żółte kartki Gość` %>% str_replace("..%", "") 
+  
+   # save the "Wynik" column as a factor
+  data$Wynik <- data$Wynik %>% as.factor()
+  
+  
+  data$`Podania celne Gospodarz` <- na_if(data$`Podania celne Gospodarz`, "..%")
+  data$`Podania celne Gość` <- na_if(data$`Podania celne Gość`, "..%")
+  data$`Ataki Gospodarz` <- na_if(data$`Ataki Gospodarz`, "..%")
+  data$`Ataki Gość` <- na_if(data$`Ataki Gość`, "..%")
+  data$`Niebezpieczne ataki Gospodarz` <- na_if(data$`Niebezpieczne ataki Gospodarz`, "..%")
+  data$`Niebezpieczne ataki Gość` <- na_if(data$`Niebezpieczne ataki Gość`, "..%")
+  
+  # select numeric data to convert them
+  numeric_data <- data %>%
+    select(-c("Gospodarz", "Gość", "Wynik", "Data", "Sezon")) %>% 
+    apply(2, function(x) as.numeric(x)) %>% 
+    as.data.frame()
+  
+  # merge numeric and character data frames and save it as a tibble
+  data <- tibble(data %>% select(c("Gospodarz", "Gość", "Wynik", "Data", "Sezon")) %>% as.data.frame(), numeric_data)  
+  
+  # mark null records, in data 0 is NA actually
+  # data$`Posiadanie piłki Gospodarz` <- na_if(data$`Posiadanie piłki Gospodarz`, 0)
+  # data$`Posiadanie piłki Gość` <- na_if(data$`Posiadanie piłki Gość`, 0) 
+  # data$`Skuteczność podań Gospodarz` <- na_if(data$`Skuteczność podań Gospodarz`, 0)
+  # data$`Skuteczność podań Gość` <- na_if(data$`Skuteczność podań Gość`, 0)
+  # data$`Wrzuty z autu Gospodarz` <- na_if(data$`Wrzuty z autu Gospodarz`, 0)
+  # data$`Wrzuty z autu Gość` <- na_if(data$`Wrzuty z autu Gość`, 0)
+  # data$`Podania Gospodarz` <- na_if(data$`Podania Gospodarz`, 0)
+  # data$`Podania Gość` <- na_if(data$`Podania Gość`, 0)
+  # data$`Podania celne Gospodarz` <- na_if(data$`Podania celne Gospodarz`, 0)
+  # data$`Podania celne Gość` <- na_if(data$`Podania celne Gość`, 0)
+  # data$`Bloki Gospodarz` <- na_if(data$`Bloki Gospodarz`, 0)
+  # data$`Bloki Gość` <- na_if(data$`Bloki Gość`, 0)
+  # data$`Rzuty wolne Gospodarz` <- na_if(data$`Rzuty wolne Gospodarz`, 0)
+  # data$`Rzuty wolne Gość` <- na_if(data$`Rzuty wolne Gość`, 0)
+  # data$`Auty bramkowe Gospodarz` <- na_if(data$`Auty bramkowe Gospodarz`, 0)
+  # data$`Auty bramkowe Gość` <- na_if(data$`Auty bramkowe Gość`, 0)
+  
+  # Add Walkower column
+  
+  data$Walkower <- 0
+  
+  ind1 <- which(data$Gospodarz == "Zagłębie Lubin" & data$Gość == "Widzew Łódź" & data$Wynik == "A")
+  
+  ind2 <- which(data$Gospodarz == "Lech Poznań" & data$Gość == "Legia Warszawa" & data$Wynik == "A" & data$`Gole Gość` == 3)
+  
+  ind3 <- which(data$Gospodarz == "Piast Gliwice" & data$Gość == "Górnik Zabrze" & data$Wynik == "A")
+  
+  data[c(ind1, ind2, ind3), "Walkower"] <- 1
+  
+  data$LowerLeague_Home <- ifelse(is.na(data$`Pozycja Gospodarz`), 1, 0) %>% as.factor()
+  data$LowerLeague_Away <- ifelse(is.na(data$`Pozycja Gość`), 1, 0) %>% as.factor()
+  
+  data$Walkower <- data$Walkower %>% as.factor()
+  
+  # sort by date
+  data <- data %>% arrange(data$Data)
+  
+  return(data)
+}
+```
+
+```{r, warning=FALSE}
+# Na visualization in raw data
+vis_miss(all_seasons, show_perc_col = FALSE) 
+
+# Na visualization in cleaned data
+vis_miss(proccessed_data, show_perc_col = FALSE)
+```
+
+```{r, results = 'asis'}
+data <- data_cleaning(all_seasons)
+skimr::skim(data)
+```
+
+```{r, echo = FALSE}
+proccessed_data <- data
+file <- paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/output/processed_data.Rdata")
+save(proccessed_data, file = file)
+```
+
+
+
+
+
