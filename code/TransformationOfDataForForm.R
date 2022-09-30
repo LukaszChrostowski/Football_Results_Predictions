@@ -22,11 +22,11 @@ for (k in 1:nrow(proccessed_data_averages)) {
   
   temp <- subset(proccessed_data, proccessed_data$Gość == team1 | proccessed_data$Gospodarz == team1)
   temp <- subset(temp, temp$Data < time, select = colAway)
-  proccessed_data_averages[k, colAway] <- colMeans(last(temp, n = 5), na.rm = TRUE) %>% as_tibble %>% t
+  proccessed_data_averages[k, colAway] <- colMeans(data.table::last(temp, n = 5), na.rm = TRUE) %>% as_tibble %>% t
   
   temp <- subset(proccessed_data, proccessed_data$Gość == team2 | proccessed_data$Gospodarz == team2)
   temp <- subset(temp, temp$Data < time, select = colHome)
-  proccessed_data_averages[k, colHome] <- colMeans(last(temp, n = 5), na.rm = TRUE) %>% as_tibble %>% t
+  proccessed_data_averages[k, colHome] <- colMeans(data.table::last(temp, n = 5), na.rm = TRUE) %>% as_tibble %>% t
 }
 
 save(proccessed_data_averages, file = "output/processed_data_averages.Rdata")

@@ -220,22 +220,12 @@ data_cleaning <- function(data){
   data <- tibble(data %>% select(c("Gospodarz", "Gość", "Wynik", "Data", "Sezon")) %>% as.data.frame(), numeric_data)  
   
   # mark null records, in data 0 is NA actually
-  # data$`Posiadanie piłki Gospodarz` <- na_if(data$`Posiadanie piłki Gospodarz`, 0)
-  # data$`Posiadanie piłki Gość` <- na_if(data$`Posiadanie piłki Gość`, 0) 
-  # data$`Skuteczność podań Gospodarz` <- na_if(data$`Skuteczność podań Gospodarz`, 0)
-  # data$`Skuteczność podań Gość` <- na_if(data$`Skuteczność podań Gość`, 0)
-  # data$`Wrzuty z autu Gospodarz` <- na_if(data$`Wrzuty z autu Gospodarz`, 0)
-  # data$`Wrzuty z autu Gość` <- na_if(data$`Wrzuty z autu Gość`, 0)
-  # data$`Podania Gospodarz` <- na_if(data$`Podania Gospodarz`, 0)
-  # data$`Podania Gość` <- na_if(data$`Podania Gość`, 0)
-  # data$`Podania celne Gospodarz` <- na_if(data$`Podania celne Gospodarz`, 0)
-  # data$`Podania celne Gość` <- na_if(data$`Podania celne Gość`, 0)
-  # data$`Bloki Gospodarz` <- na_if(data$`Bloki Gospodarz`, 0)
-  # data$`Bloki Gość` <- na_if(data$`Bloki Gość`, 0)
-  # data$`Rzuty wolne Gospodarz` <- na_if(data$`Rzuty wolne Gospodarz`, 0)
-  # data$`Rzuty wolne Gość` <- na_if(data$`Rzuty wolne Gość`, 0)
-  # data$`Auty bramkowe Gospodarz` <- na_if(data$`Auty bramkowe Gospodarz`, 0)
-  # data$`Auty bramkowe Gość` <- na_if(data$`Auty bramkowe Gość`, 0)
+  data$`Bloki Gospodarz` <- na_if(data$`Bloki Gospodarz`, 0)
+  data$`Bloki Gość` <- na_if(data$`Bloki Gość`, 0)
+  data$`Rzuty wolne Gospodarz` <- na_if(data$`Rzuty wolne Gospodarz`, 0)
+  data$`Rzuty wolne Gość` <- na_if(data$`Rzuty wolne Gość`, 0)
+  data$`Auty bramkowe Gospodarz` <- na_if(data$`Auty bramkowe Gospodarz`, 0)
+  data$`Auty bramkowe Gość` <- na_if(data$`Auty bramkowe Gość`, 0)
   
   # Add Walkower column
   
