@@ -1,18 +1,18 @@
 library(tidyverse)
 load("output/processed_data.Rdata")
+colnames(proccessed_data)[35] <- "Liczba sezonów Gość"
 
 proccessed_data$Data <- proccessed_data$Data %>% as.Date()
 proccessed_data <- proccessed_data[order(proccessed_data$Data), ]
 
-proccessed_data_averages <- data.frame(matrix(ncol = ncol(proccessed_data), nrow = nrow(proccessed_data)))
-colnames(proccessed_data_averages) <- colnames(proccessed_data)
+proccessed_data_averages <- data.frame(matrix(NA, ncol = ncol(proccessed_data) + 2, nrow = nrow(proccessed_data)))
+colnames(proccessed_data_averages) <- c(colnames(proccessed_data), "Gole stracone Gość", "Gole stracone Gospodarz")
 rownames(proccessed_data_averages) <- rownames(proccessed_data)
 proccessed_data_averages <- as_tibble(proccessed_data_averages)
-colAway <- colnames(proccessed_data)[grepl(pattern = "Gość", x = colnames(proccessed_data))][-1]
-colHome <- colnames(proccessed_data)[grepl(pattern = "Gospodarz", x = colnames(proccessed_data))][-1]
+numStatNames <- colnames(proccessed_data_averages)[grepl(pattern = "Gość", x = colnames(proccessed_data_averages))][-c(1, 16)]
+numStatNames <- str_replace(numStatNames, pattern = " Gość", replacement = "")
 colRest <- colnames(proccessed_data)
-colRest <- colRest[!(colRest %in% colAway)]
-colRest <- colRest[!(colRest %in% colHome)]
+colRest <- colRest[!(sapply(numStatNames, function (x) grepl(pattern = x, colRest)) %>% rowSums %>% as.logical)]
 
 for (k in 1:nrow(proccessed_data_averages)) {
   team1 <- proccessed_data[k, "Gość"] %>% unlist
@@ -21,12 +21,34 @@ for (k in 1:nrow(proccessed_data_averages)) {
   proccessed_data_averages[k, colRest] <- proccessed_data[k, colRest]
   
   temp <- subset(proccessed_data, proccessed_data$Gość == team1 | proccessed_data$Gospodarz == team1)
-  temp <- subset(temp, temp$Data < time, select = colAway)
-  proccessed_data_averages[k, colAway] <- colMeans(data.table::last(temp, n = 5), na.rm = TRUE) %>% as_tibble %>% t
+  temp <- subset(temp, temp$Data < time)
+  temp <- data.table::last(temp, n = 5)
+  auxMatrix <- data.frame(matrix(0, nrow = min(nrow(temp), 5), ncol = length(numStatNames)))
+  if (nrow(auxMatrix) > 0) {
+    for (m in 1:nrow(auxMatrix)) {
+      if (temp[m, "Gość"] == team1) {
+        auxMatrix[m, ] <- temp[m, ] %>% dplyr::select(c(paste(numStatNames[-length(numStatNames)], "Gość"), "Gole Gospodarz"))
+      } else {
+        auxMatrix[m, ] <- temp[m, ] %>% dplyr::select(c(paste(numStatNames[-length(numStatNames)], "Gospodarz"), "Gole Gość"))
+      }
+    }
+    proccessed_data_averages[k, paste(numStatNames, "Gość")] <- matrix(auxMatrix %>% colMeans(), ncol = length(numStatNames))
+  }
   
   temp <- subset(proccessed_data, proccessed_data$Gość == team2 | proccessed_data$Gospodarz == team2)
-  temp <- subset(temp, temp$Data < time, select = colHome)
-  proccessed_data_averages[k, colHome] <- colMeans(data.table::last(temp, n = 5), na.rm = TRUE) %>% as_tibble %>% t
+  temp <- subset(temp, temp$Data < time)
+  temp <- data.table::last(temp, n = 5)
+  auxMatrix <- data.frame(matrix(0, nrow = min(nrow(temp), 5), ncol = length(numStatNames)))
+  if (nrow(auxMatrix) > 0) {
+    for (m in 1:nrow(auxMatrix)) {
+      if (temp[m, "Gość"] == team2) {
+        auxMatrix[m, ] <- temp[m, ] %>% dplyr::select(c(paste(numStatNames[-length(numStatNames)], "Gość"), "Gole Gospodarz"))
+      } else {
+        auxMatrix[m, ] <- temp[m, ] %>% dplyr::select(c(paste(numStatNames[-length(numStatNames)], "Gospodarz"), "Gole Gość"))
+      }
+    }
+    proccessed_data_averages[k, paste(numStatNames, "Gospodarz")] <- matrix(auxMatrix %>% colMeans(), ncol = length(numStatNames))
+  }
 }
 
 save(proccessed_data_averages, file = "output/processed_data_averages.Rdata")

@@ -153,9 +153,9 @@ dd2 <- xgb.DMatrix(data = dd2, label = dd2y)
 
 watchlist <- list(train = dd1, test = dd2)
 
-CV <- xgb.cv(data = dd1, max.depth = 4, watchlist = watchlist, nrounds = 300, params = list(objective = "multi:softmax", num_class = 3), nfold = 40)
+CV <- xgb.cv(data = dd1, max.depth = 3, watchlist = watchlist, nrounds = 300, params = list(objective = "multi:softmax", eval_metric = c("merror", "auc"), num_class = 3), nfold = 40)
 
-bb <- xgb.train(data = dd1, max.depth = 4, watchlist = watchlist, nrounds = CV$evaluation_log$test_mlogloss_mean %>% which.min(), params = list(objective = "multi:softmax", num_class = 3))
+bb <- xgb.train(data = dd1, max.depth = 3, watchlist = watchlist, nrounds = CV$evaluation_log$test_merror_mean %>% which.min(), params = list(objective = "multi:softmax", eval_metric = c("merror", "auc"), num_class = 3))
 
 mean(predict(bb, dd1) != dd1y)
 mean(predict(bb, dd2) != dd2y)
@@ -209,7 +209,9 @@ dd2 <- xgb.DMatrix(data = dd2, label = dd2y)
 
 watchlist <- list(train = dd1, test = dd2)
 
-bb <- xgb.train(data = dd1, max.depth = 4, watchlist = watchlist, nrounds = 56, params = list(objective = "multi:softmax", eval_metric = c("merror", "auc"), num_class = 3))
+CV <- xgb.cv(data = dd1, max.depth = 4, watchlist = watchlist, nrounds = 300, params = list(objective = "multi:softmax", eval_metric = c("merror", "auc"), num_class = 3), nfold = 40)
+# 3 - 0.5632184 4 - 0.5172414 5 - 0.4942529 (63) 6 - 0.5862069
+bb <- xgb.train(data = dd1, max.depth = 5, watchlist = watchlist, nrounds = 63, params = list(objective = "multi:softmax", eval_metric = c("merror", "auc"), num_class = 3))
 
 mean(predict(bb, dd1) != dd1y)
 mean(predict(bb, dd2) != dd2y)

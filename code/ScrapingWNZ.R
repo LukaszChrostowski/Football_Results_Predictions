@@ -1301,9 +1301,8 @@ save(scrapedData2021and2022, file = "data/scrapedData2021and2022.Rdata")
 # 2022/2023 ####
 url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2022-2023/wyniki/"
 
-seleniumServer <- rsDriver(browser = "chrome",
-                           #verbose = FALSE, 
-                           chromever = "105.0.5195.52", # the lastest
+seleniumServer <- rsDriver(browser = "firefox",
+                           #verbose = FALSE,
                            port = free_port())
 # Client object
 remDr <- seleniumServer$client
@@ -1361,7 +1360,7 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
   
-  Sys.sleep(.05) # this makes it so that the site always has the time to compile javascript code
+  Sys.sleep(2) # this makes it so that the site always has the time to compile javascript code
   obj1 <- remDr$findElements(using = "class name", "stat__category")
   if (length(obj1) == 0) {
     obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
