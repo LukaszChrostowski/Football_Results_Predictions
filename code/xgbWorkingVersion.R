@@ -168,11 +168,11 @@ confusionMatrix(predict(bb, dd2) %>% as.factor(), dd2y %>% as.factor())
 df <- proccessed_data_averages
 AAA <- apply(df[, sapply(df, is.numeric)], MARGIN = 2, FUN = function(x) {sum(is.na(x))}) / nrow(df)
 AAA <- AAA[AAA < .1] %>% names
-df <- df %>% mutate_if(is.numeric, ~replace_na(.,mean(., na.rm = TRUE)))
+df <- df %>% mutate_if(is.numeric, ~replace_na(.,min(., na.rm = TRUE)))
 df$Wynik <- ordered(df$Wynik)
 
 formula <- Wynik ~ `Posiadanie piłki Gospodarz` + `Posiadanie piłki Gospodarz` + `Sytuacje bramkowe Gospodarz` + `Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz` + `Rzuty rożne Gospodarz` + `Spalone Gospodarz` + `Interwencje bramkarzy Gospodarz` + `Faule Gospodarz` + `Żółte kartki Gospodarz` + `Czerwone kartki Gospodarz` + `Posiadanie piłki Gość` + `Sytuacje bramkowe Gość` + `Strzały na bramkę Gość` + `Strzały niecelne Gość` + `Rzuty rożne Gość` + `Spalone Gość` + `Interwencje bramkarzy Gość` + `Faule Gość` + `Żółte kartki Gość` + `Czerwone kartki Gość` + `Gole Gospodarz` + `Gole Gość` + Sezon
-dd1 <- model.frame(formula, df)
+dd1 <- model.frame(formula, df, na.action = na.fail)
 dd1 <- model.matrix(formula, dd1)
 dd2 <- dd1[dd1[, "Sezon2022/23"] == 1, ]
 dd1 <- dd1[dd1[, "Sezon2022/23"] == 0, ]
@@ -199,7 +199,20 @@ varNum <- which(((pr$sdev %>% cumsum()) / sum(pr$sdev)) > .95)[1]
 
 dd <- pr$x[, 1:varNum]
 
-rbind(dd, model.matrix(Wynik ~ Gospodarz + Gość, model.frame(Wynik ~ Gospodarz + Gość, df)))
+dd <- cbind(dd, model.matrix(Wynik ~ Gospodarz + Gość + LowerLeague_Away + LowerLeague_Home - 1, model.frame(Wynik ~ Gospodarz + Gość + LowerLeague_Away + LowerLeague_Home - 1, df)))
 
 dd2 <- dd[-(1:(dim(dd1)[1])), ]
 dd1 <- dd[1:(dim(dd1)[1]), ]
+
+dd1 <- xgb.DMatrix(data = dd1, label = dd1y)
+dd2 <- xgb.DMatrix(data = dd2, label = dd2y)
+
+watchlist <- list(train = dd1, test = dd2)
+
+bb <- xgb.train(data = dd1, max.depth = 4, watchlist = watchlist, nrounds = 56, params = list(objective = "multi:softmax", eval_metric = c("merror", "auc"), num_class = 3))
+
+mean(predict(bb, dd1) != dd1y)
+mean(predict(bb, dd2) != dd2y)
+
+confusionMatrix(predict(bb, dd1) %>% as.factor(), dd1y %>% as.factor())
+confusionMatrix(predict(bb, dd2) %>% as.factor(), dd2y %>% as.factor())
