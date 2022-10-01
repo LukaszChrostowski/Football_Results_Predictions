@@ -152,7 +152,7 @@ ChangeNames = function(Data)
   ind1 = grep("season.*x$", colnames(Data))
   ind2 = grep("season.*y$", colnames(Data))
   colnames(Data)[ind1] <- "Liczba sezonów Gospodarz"
-  colnames(Data)[ind2] <- "Liczba Gospodarz Gość"
+  colnames(Data)[ind2] <- "Liczba sezonów Gość"
   return(Data)
 }
 
