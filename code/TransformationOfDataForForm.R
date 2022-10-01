@@ -1,6 +1,14 @@
 library(tidyverse)
+library(caret)
 load("output/processed_data.Rdata")
 colnames(proccessed_data)[35] <- "Liczba sezonów Gość"
+
+dW <- dummyVars(formula = " ~ .", data = proccessed_data %>% select(Wynik))
+dW <- data.frame(predict(dW, proccessed_data %>% select(Wynik)))
+dW <- cbind(dW, dW)
+dW <- dW[, -c(4, 6)]
+colnames(dW) <- c("Porażka Gospodarz", "Remis Gospodarz", "Porażka Gość", "Remis Gość")
+proccessed_data <- cbind(proccessed_data, dW)
 
 proccessed_data$Data <- proccessed_data$Data %>% as.Date()
 proccessed_data <- proccessed_data[order(proccessed_data$Data), ]
@@ -50,5 +58,12 @@ for (k in 1:nrow(proccessed_data_averages)) {
     proccessed_data_averages[k, paste(numStatNames, "Gospodarz")] <- matrix(auxMatrix %>% colMeans(), ncol = length(numStatNames))
   }
 }
+
+proccessed_data_averages[,c("Porażka Gospodarz", "Remis Gospodarz", "Porażka Gość", "Remis Gość")] <- proccessed_data_averages[,c("Porażka Gospodarz", "Remis Gospodarz", "Porażka Gość", "Remis Gość")] * 5
+proccessed_data_averages[, c("Porażka Gospodarz", "Porażka Gość", "Remis Gospodarz", "Remis Gość")] <- round(proccessed_data_averages[, c("Porażka Gospodarz", "Porażka Gość", "Remis Gospodarz", "Remis Gość")])
+proccessed_data_averages$`Porażka Gospodarz` <- proccessed_data_averages$`Porażka Gospodarz` %>% as.factor()
+proccessed_data_averages$`Remis Gospodarz` <- proccessed_data_averages$`Remis Gospodarz` %>% as.factor()
+proccessed_data_averages$`Porażka Gość` <- proccessed_data_averages$`Porażka Gość` %>% as.factor()
+proccessed_data_averages$`Remis Gość` <- proccessed_data_averages$`Remis Gość` %>% as.factor()
 
 save(proccessed_data_averages, file = "output/processed_data_averages.Rdata")
