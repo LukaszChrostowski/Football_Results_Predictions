@@ -1,22 +1,51 @@
-formula <- Wynik ~ Gospodarz + Gość + `Posiadanie piłki Gospodarz` + `Sytuacje bramkowe Gospodarz` + `Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz` + `Rzuty rożne Gospodarz` + `Spalone Gospodarz` + `Interwencje bramkarzy Gospodarz` + `Faule Gospodarz` + `Żółte kartki Gospodarz` + `Czerwone kartki Gospodarz` + `Posiadanie piłki Gość` + `Sytuacje bramkowe Gość` + `Strzały na bramkę Gość` + `Strzały niecelne Gość` + `Rzuty rożne Gość` + `Spalone Gość` + `Interwencje bramkarzy Gość` + `Faule Gość` + `Żółte kartki Gość` + `Czerwone kartki Gość` + `Gole Gospodarz` + `Gole Gość`
-formula1 <- Wynik ~ `Posiadanie piłki Gospodarz` + `Sytuacje bramkowe Gospodarz` + `Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz` + `Rzuty rożne Gospodarz` + `Spalone Gospodarz` + `Interwencje bramkarzy Gospodarz` + `Faule Gospodarz` + `Żółte kartki Gospodarz` + `Czerwone kartki Gospodarz` + `Posiadanie piłki Gość` + `Sytuacje bramkowe Gość` + `Strzały na bramkę Gość` + `Strzały niecelne Gość` + `Rzuty rożne Gość` + `Spalone Gość` + `Interwencje bramkarzy Gość` + `Faule Gość` + `Żółte kartki Gość` + `Czerwone kartki Gość` + `Gole Gospodarz` + `Gole Gość`
+load("C:/Users/Kertoo/Desktop/Football_Results_Predictions/output/processed_data_averages.Rdata")
 
-df2 <- df1
-df2$Wynik <- ifelse(df1$Wynik == "H", 1, 0)
+df <- proccessed_data_averages
+AAA <- apply(df[, sapply(df, is.numeric)], MARGIN = 2, FUN = function(x) {sum(is.na(x))}) / nrow(df)
+AAA <- AAA[AAA < .1] %>% names
+df <- df %>% mutate_if(is.numeric, ~replace_na(., mean(., na.rm = TRUE)))
+df$Wynik <- ordered(df$Wynik)
+# only numeric
+formula <- Wynik ~ `Gole stracone Gospodarz` + `Gole stracone Gość` + `Posiadanie piłki Gospodarz` + `Posiadanie piłki Gospodarz` + `Sytuacje bramkowe Gospodarz` + `Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz` + `Rzuty rożne Gospodarz` + `Spalone Gospodarz` + `Interwencje bramkarzy Gospodarz` + `Faule Gospodarz` + `Żółte kartki Gospodarz` + `Czerwone kartki Gospodarz` + `Posiadanie piłki Gość` + `Sytuacje bramkowe Gość` + `Strzały na bramkę Gość` + `Strzały niecelne Gość` + `Rzuty rożne Gość` + `Spalone Gość` + `Interwencje bramkarzy Gość` + `Faule Gość` + `Żółte kartki Gość` + `Czerwone kartki Gość` + `Gole Gospodarz` + `Gole Gość` + Sezon + Gospodarz + Gość
+dd1 <- model.frame(formula, df, na.action = na.fail)
+dd1$Gospodarz <- factor(dd1$Gospodarz)
+dd1$Gość <- factor(dd1$Gość)
+dd2 <- dd1[dd1$Sezon == "2022/23", ]
+dd1 <- dd1[dd1$Sezon != "2022/23", ]
+dd2 <- dd2[, !(grepl("Sezon", colnames(dd2)))]
+dd1 <- dd1[, !(grepl("Sezon", colnames(dd1)))]
+dd2 <- dd2[, !(grepl("Wynik", colnames(dd2)))]
+dd1 <- dd1[, !(grepl("Wynik", colnames(dd1)))]
 
-A1 <- glm(formula = formula, data = df2, family = binomial())
-A11 <- glm(formula = formula1, data = df2, family = binomial())
+dd1y <- ((df %>% subset(!(df$Sezon %in% c("2022/23"))) %>% dplyr::select("Wynik"))$Wynik %>% as.numeric()) - 1
+dd2y <- ((df %>% subset(df$Sezon == "2022/23") %>% dplyr::select("Wynik"))$Wynik %>% as.numeric()) - 1
 
-df3 <- df1
-df3$Wynik <- ifelse(df1$Wynik == "A", 1, 0)
+dd <- rbind(dd1, dd2)
+dd <- dd[, sapply(as.data.frame(dd), is.numeric)]
 
-A2 <- glm(formula = formula, data = df3, family = binomial())
-A22 <- glm(formula = formula1, data = df3, family = binomial())
+pr <- prcomp(dd)
 
+(pr$sdev %>% cumsum()) / sum(pr$sdev)
 
-predict(A1, type = "response")
-cc1 <- ifelse(predict(A1, type = "response") > .5, "H", ifelse(predict(A2, type = "response"), "A", "D"))
-cc2 <- ifelse(predict(A11, type = "response") > .5, "H", ifelse(predict(A22, type = "response"), "A", "D"))
-mean(cc1 != df1$Wynik)
-mean(cc2 != df1$Wynik)
+barplot(pr$sdev, col = "navy", names = colnames(pr$x))
 
+# choosing variables so that at least 77.5% of std.dev is explained
+
+varNum <- which(((pr$sdev %>% cumsum()) / sum(pr$sdev)) > .775)[1]
+
+dd <- pr$x[, 1:varNum]
+
+dd <- cbind(dd, model.frame(Wynik ~ Gospodarz + Gość + LowerLeague_Away + LowerLeague_Home - 1, df))
+
+dd2 <- dd[-(1:(dim(dd1)[1])), ]
+dd1 <- dd[1:(dim(dd1)[1]), ]
+
+dd2$Wynik <- ifelse(dd2$Wynik == "H", 1, 0)
+dd1$Wynik <- ifelse(dd1$Wynik == "H", 1, 0)
+
+logitModel1 <- glm(formula = Wynik ~ ., family = binomial(), data = dd1)
+
+dd2$Wynik <- ifelse(dd2y == "A", 1, 0)
+dd1$Wynik <- ifelse(dd1y == "A", 1, 0)
+
+logitModel2 <- glm(formula = Wynik ~ ., family = binomial(), data = dd1, control = glm.control(maxit = 1000))
