@@ -2,147 +2,65 @@ library(catboost)
 library(caret)
 library(tidyverse)
 
-load("C:/Users/Kertoo/Desktop/Football_Results_Predictions/output/processed_data_averages.Rdata")
+load("C:/Users/Kertoo/Desktop/Football_Results_Predictions/output/processed_data_averages_5.Rdata")
 
-# Working version
-df <- proccessed_data_averages
-AAA <- apply(df[, sapply(df, is.numeric)], MARGIN = 2, FUN = function(x) {sum(is.na(x))}) / nrow(df)
-AAA <- AAA[AAA < .1] %>% names
-df <- df %>% mutate_if(is.numeric, ~replace_na(., mean(., na.rm = TRUE)))
-df$Wynik <- ordered(df$Wynik)
-formula <- Wynik ~ `Posiadanie piłki Gospodarz` + `Sytuacje bramkowe Gospodarz` + `Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz` + `Rzuty rożne Gospodarz` + `Spalone Gospodarz` + `Interwencje bramkarzy Gospodarz` + `Faule Gospodarz` + `Żółte kartki Gospodarz` + `Czerwone kartki Gospodarz` + `Posiadanie piłki Gość` + `Sytuacje bramkowe Gość` + `Strzały na bramkę Gość` + `Strzały niecelne Gość` + `Rzuty rożne Gość` + `Spalone Gość` + `Interwencje bramkarzy Gość` + `Faule Gość` + `Żółte kartki Gość` + `Czerwone kartki Gość` + `Gole Gospodarz` + `Gole Gość` + Sezon + Gospodarz + Gość
-dd1 <- model.frame(formula, df, na.action = na.fail)
-dd1$Gospodarz <- factor(dd1$Gospodarz)
-dd1$Gość <- factor(dd1$Gość)
-dd2 <- dd1[dd1$Sezon == "2022/23", ]
-dd1 <- dd1[dd1$Sezon != "2022/23", ]
-dd2 <- dd2[, !(grepl("Sezon", colnames(dd2)))]
-dd1 <- dd1[, !(grepl("Sezon", colnames(dd1)))]
-dd2 <- dd2[, !(grepl("Wynik", colnames(dd2)))]
-dd1 <- dd1[, !(grepl("Wynik", colnames(dd1)))]
+# Working version ####
+df <- proccessed_data_averages_5
+df$`Porażka Gospodarz` <- df$`Porażka Gospodarz` %>% as.numeric()
+df$`Porażka Gość` <- df$`Porażka Gość` %>% as.numeric()
+df$`Remis Gospodarz` <- df$`Remis Gospodarz` %>% as.numeric()
+df$`Remis Gość` <- df$`Remis Gość` %>% as.numeric()
+# These few first records don't have much data
+invalid_cols <- sapply(df, FUN = function(x) {sum(is.na(x))}) / NROW(df) > .1
+invalid_cols <- invalid_cols[invalid_cols] %>% names
+df <- df %>% subset(Sezon != "2012/13") %>% select(!(all_of(invalid_cols)))
+# Train test split
+df_train <- df[df$Sezon != "2022/23", ]
+df_test <- df[df$Sezon == "2022/23", ]
+# Imputation
+df_train <- df_train %>% drop_na
 
-dd1y <- ((df %>% subset(!(df$Sezon %in% c("2022/23"))) %>% dplyr::select("Wynik"))$Wynik %>% as.numeric()) - 1
-dd2y <- ((df %>% subset(df$Sezon == "2022/23") %>% dplyr::select("Wynik"))$Wynik %>% as.numeric()) - 1
+# pooling
+df_train_y <- df_train %>% select("Wynik")
+df_test_y <- df_test %>% select("Wynik")
+df_train <- cbind(
+  model.matrix(Wynik ~ . - 1 - Data - Sezon - Gospodarz - Gość - LowerLeague_Away - LowerLeague_Home - Walkower, df_train) %>% as.data.frame,
+  Gospodarz = df_train$Gospodarz %>% as.factor,
+  Gość = df_train$Gość %>% as.factor,
+  LowerLeague_Home = df_train$LowerLeague_Home %>% as.factor,
+  LowerLeague_Away = df_train$LowerLeague_Away %>% as.factor
+)
+df_test <- cbind(
+  model.matrix(Wynik ~ . - 1 - Data - Sezon - Gospodarz - Gość - LowerLeague_Away - LowerLeague_Home - Walkower, df_test) %>% as.data.frame,
+  Gospodarz = df_test$Gospodarz %>% as.factor(),
+  Gość = df_test$Gość %>% as.factor(),
+  LowerLeague_Home = df_test$LowerLeague_Home %>% as.factor,
+  LowerLeague_Away = df_test$LowerLeague_Away %>% as.factor
+)
 
-dd <- rbind(dd1, dd2)
-dd <- dd[, sapply(as.data.frame(dd), is.numeric)]
+train_pool <- catboost.load_pool(df_train, 
+                                 label = df_train_y$Wynik %>% as.numeric() - 1)
+test_pool <- catboost.load_pool(df_test, 
+                                label = df_test_y$Wynik %>% as.numeric() - 1)
 
-pr <- prcomp(dd)
-
-(pr$sdev %>% cumsum()) / sum(pr$sdev)
-
-barplot(pr$sdev, col = "navy", names = colnames(pr$x))
-
-# choosing variables so that at least 97.5% of std.dev is explained
-
-varNum <- which(((pr$sdev %>% cumsum()) / sum(pr$sdev)) > .975)[1]
-
-dd <- pr$x[, 1:varNum]
-
-dd <- cbind(dd, model.frame( ~ Gospodarz + Gość + LowerLeague_Away + LowerLeague_Home - 1, df))
-
-dd2 <- dd[-(1:(dim(dd1)[1])), ]
-dd1 <- dd[1:(dim(dd1)[1]), ]
-
-train_pool <- catboost.load_pool(dd1, label = dd1y)
-test_pool <- catboost.load_pool(dd2, label = dd2y)
-
-catModel <- catboost.train(
+cat_model <- catboost.train(
   learn_pool = train_pool, 
   test_pool = test_pool, 
-  params = list(loss_function = "MultiClass", 
-                eval_metric = "Accuracy", 
-                iterations = 1000, 
-                depth = 4,
-                prediction_type = "Class", 
-                classes_count = 3)
+  params = list(
+    task_type = "GPU",
+    loss_function = "MultiClass", 
+    eval_metric = "Accuracy", 
+    iterations = 2000,
+    depth = 3,
+    prediction_type = "Class", 
+    classes_count = 3,
+    leaf_estimation_iterations = 70,
+    learning_rate = .01
+  )
 )
 
-catboost.cv(
-  pool = train_pool,
-  params = list(loss_function = "MultiClass", 
-                eval_metric = "Accuracy", 
-                iterations = 930, 
-                depth = 4,
-                prediction_type = "Class", 
-                classes_count = 3),
-  fold_count = 50
+caret::confusionMatrix(
+  catboost.predict(cat_model, test_pool, prediction_type = "Class") %>% factor, 
+  (df_test_y$Wynik %>% as.numeric() - 1) %>% factor
 )
 
-mean(catboost.predict(catModel, train_pool, prediction_type = "Class") != dd1y)
-mean(catboost.predict(catModel, test_pool, prediction_type = "Class") != dd2y)
-
-caret::confusionMatrix(catboost.predict(catModel, train_pool, prediction_type = "Class") %>% factor, dd1y %>% factor)
-caret::confusionMatrix(catboost.predict(catModel, test_pool, prediction_type = "Class") %>% factor, dd2y %>% factor)
-
-
-catboost.get_feature_importance(catModel)
-
-##1
-
-df <- proccessed_data_averages
-
-AAA <- apply(df[, sapply(df, is.numeric)], MARGIN = 2, FUN = function(x) {sum(is.na(x))}) / nrow(df)
-AAA <- AAA[AAA < .1] %>% names
-df <- df %>% mutate_if(is.numeric, ~replace_na(., min(., na.rm = TRUE)))
-df$Wynik <- ordered(df$Wynik)
-
-formula <- Wynik ~ `Posiadanie piłki Gospodarz` + `Sytuacje bramkowe Gospodarz` + `Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz` + `Rzuty rożne Gospodarz` + `Spalone Gospodarz` + `Interwencje bramkarzy Gospodarz` + `Faule Gospodarz` + `Żółte kartki Gospodarz` + `Czerwone kartki Gospodarz` + `Posiadanie piłki Gość` + `Sytuacje bramkowe Gość` + `Strzały na bramkę Gość` + `Strzały niecelne Gość` + `Rzuty rożne Gość` + `Spalone Gość` + `Interwencje bramkarzy Gość` + `Faule Gość` + `Żółte kartki Gość` + `Czerwone kartki Gość` + `Gole Gospodarz` + `Gole Gość` + Sezon + Gospodarz + Gość
-dd1 <- model.frame(formula, df, na.action = na.fail)
-dd1$Gospodarz <- factor(dd1$Gospodarz)
-dd1$Gość <- factor(dd1$Gość)
-dd2 <- dd1[dd1$Sezon == "2022/23", ]
-dd1 <- dd1[dd1$Sezon != "2022/23", ]
-dd2 <- dd2[, !(grepl("Sezon", colnames(dd2)))]
-dd1 <- dd1[, !(grepl("Sezon", colnames(dd1)))]
-dd2 <- dd2[, !(grepl("Wynik", colnames(dd2)))]
-dd1 <- dd1[, !(grepl("Wynik", colnames(dd1)))]
-
-dd1y <- ((df %>% subset(!(df$Sezon %in% c("2022/23"))) %>% dplyr::select("Wynik"))$Wynik %>% as.numeric()) - 1
-dd2y <- ((df %>% subset(df$Sezon == "2022/23") %>% dplyr::select("Wynik"))$Wynik %>% as.numeric()) - 1
-
-dd <- rbind(dd1, dd2)
-dd <- dd[, sapply(as.data.frame(dd), is.numeric)]
-
-pr <- prcomp(dd)
-
-(pr$sdev %>% cumsum()) / sum(pr$sdev)
-
-barplot(pr$sdev, col = "navy", names = colnames(pr$x))
-
-# choosing variables so that at least 95% of std.dev is explained
-
-varNum <- which(((pr$sdev %>% cumsum()) / sum(pr$sdev)) > .25)[1]
-
-dd <- pr$x[, 1:varNum]
-
-dd <- cbind(dd, model.frame( ~ Gospodarz + Gość +  LowerLeague_Away + LowerLeague_Home - 1, df))
-
-#dd <- cbind(dd, df %>% select(`Remis Gość`, `Remis Gospodarz`, `Porażka Gospodarz`,`Porażka Gość`))
-
-dd2 <- dd[-(1:(dim(dd1)[1])), ]
-dd1 <- dd[1:(dim(dd1)[1]), ]
-
-train_pool <- catboost.load_pool(dd1, label = dd1y)
-test_pool <- catboost.load_pool(dd2, label = dd2y)
-
-catModel1 <- catboost.train(
-  learn_pool = train_pool, 
-  test_pool = test_pool, 
-  params = list(loss_function = "MultiClass", 
-                eval_metric = "Accuracy", 
-                iterations = 300, 
-                depth = 6,
-                prediction_type = "Class", 
-                classes_count = 3)
-)
-# rsm, alpha, learning_rate, use_best_model
-
-mean(catboost.predict(catModel1, train_pool, prediction_type = "Class") != dd1y)
-mean(catboost.predict(catModel1, test_pool, prediction_type = "Class") != dd2y)
-
-
-confusionMatrix(catboost.predict(catModel1, train_pool, prediction_type = "Class") %>% factor, dd1y %>% factor)
-confusionMatrix(catboost.predict(catModel1, test_pool, prediction_type = "Class") %>% factor, dd2y %>% factor)
-
-catboost.get_feature_importance(catModel1)

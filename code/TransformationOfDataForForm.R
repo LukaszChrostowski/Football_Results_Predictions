@@ -3,6 +3,7 @@ library(caret)
 load("output/processed_data.Rdata")
 colnames(proccessed_data)[35] <- "Liczba sezonów Gość"
 
+numOfLastPlayedGames <- 5 # change this to change the number of last games taken into consideration
 dW <- dummyVars(formula = " ~ .", data = proccessed_data %>% select(Wynik))
 dW <- data.frame(predict(dW, proccessed_data %>% select(Wynik)))
 dW <- cbind(dW, dW)
@@ -30,8 +31,8 @@ for (k in 1:nrow(proccessed_data_averages)) {
   
   temp <- subset(proccessed_data, proccessed_data$Gość == team1 | proccessed_data$Gospodarz == team1)
   temp <- subset(temp, temp$Data < time)
-  temp <- data.table::last(temp, n = 5)
-  auxMatrix <- data.frame(matrix(0, nrow = min(nrow(temp), 5), ncol = length(numStatNames)))
+  temp <- data.table::last(temp, n = numOfLastPlayedGames)
+  auxMatrix <- data.frame(matrix(0, nrow = min(nrow(temp), numOfLastPlayedGames), ncol = length(numStatNames)))
   if (nrow(auxMatrix) > 0) {
     for (m in 1:nrow(auxMatrix)) {
       if (temp[m, "Gość"] == team1) {
@@ -45,8 +46,8 @@ for (k in 1:nrow(proccessed_data_averages)) {
   
   temp <- subset(proccessed_data, proccessed_data$Gość == team2 | proccessed_data$Gospodarz == team2)
   temp <- subset(temp, temp$Data < time)
-  temp <- data.table::last(temp, n = 5)
-  auxMatrix <- data.frame(matrix(0, nrow = min(nrow(temp), 5), ncol = length(numStatNames)))
+  temp <- data.table::last(temp, n = numOfLastPlayedGames)
+  auxMatrix <- data.frame(matrix(0, nrow = min(nrow(temp), numOfLastPlayedGames), ncol = length(numStatNames)))
   if (nrow(auxMatrix) > 0) {
     for (m in 1:nrow(auxMatrix)) {
       if (temp[m, "Gość"] == team2) {
@@ -59,11 +60,12 @@ for (k in 1:nrow(proccessed_data_averages)) {
   }
 }
 
-proccessed_data_averages[,c("Porażka Gospodarz", "Remis Gospodarz", "Porażka Gość", "Remis Gość")] <- proccessed_data_averages[,c("Porażka Gospodarz", "Remis Gospodarz", "Porażka Gość", "Remis Gość")] * 5
+proccessed_data_averages[,c("Porażka Gospodarz", "Remis Gospodarz", "Porażka Gość", "Remis Gość")] <- proccessed_data_averages[,c("Porażka Gospodarz", "Remis Gospodarz", "Porażka Gość", "Remis Gość")] * numOfLastPlayedGames
 proccessed_data_averages[, c("Porażka Gospodarz", "Porażka Gość", "Remis Gospodarz", "Remis Gość")] <- round(proccessed_data_averages[, c("Porażka Gospodarz", "Porażka Gość", "Remis Gospodarz", "Remis Gość")])
 proccessed_data_averages$`Porażka Gospodarz` <- proccessed_data_averages$`Porażka Gospodarz` %>% as.factor()
 proccessed_data_averages$`Remis Gospodarz` <- proccessed_data_averages$`Remis Gospodarz` %>% as.factor()
 proccessed_data_averages$`Porażka Gość` <- proccessed_data_averages$`Porażka Gość` %>% as.factor()
 proccessed_data_averages$`Remis Gość` <- proccessed_data_averages$`Remis Gość` %>% as.factor()
 
-save(proccessed_data_averages, file = "output/processed_data_averages.Rdata")
+proccessed_data_averages_5 <- proccessed_data_averages
+save(proccessed_data_averages_5, file = "output/processed_data_averages_5.Rdata")

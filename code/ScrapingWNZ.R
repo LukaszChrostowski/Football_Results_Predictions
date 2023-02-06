@@ -3,6 +3,10 @@
 #install.packages("RSelenium") you also need to install java for this
 #install.packages("netstat") only one function is needed
 
+#### WARNING
+#### the site from which data is gathered changed so "wynikanazywo" should
+#### probably be changed to just "wyniki" everywhere
+
 # if any for loop breaks (which happens often due to instability of selenium) try:
 # for (m in subSiteUrl[(which(subSiteUrl == m)):length(subSiteUrl)]) {
 
@@ -1299,15 +1303,15 @@ scrapedData2021and2022 <- K
 save(scrapedData2021and2022, file = "data/scrapedData2021and2022.Rdata")
 
 # 2022/2023 ####
-url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2022-2023/wyniki/"
+url <- "https://www.wyniki.pl/pko-bp-ekstraklasa/wyniki/"
 
 seleniumServer <- rsDriver(browser = "firefox",
                            #verbose = FALSE,
-                           port = free_port())
+                           port = free_port(),
+                           chromever = "107.0.5304.18")
 # Client object
 remDr <- seleniumServer$client
 
-remDr$open()
 remDr$maxWindowSize()
 remDr$navigate(url)
 # click on cookies info:
@@ -1323,7 +1327,7 @@ subSiteUrl <-
   sapply(obj$findChildElements(using = "class name", "event__match"), FUN = function(x) {x$getElementAttribute("id")}) %>%
   unlist()
 subSiteUrl <- sapply(subSiteUrl, FUN = function(x) {substr(x, start = 5, stop = 12)})
-subSiteUrl <- paste0("https://www.wynikinazywo.pl/mecz/", subSiteUrl, "/#/szczegoly-meczu/statystyki-meczu/0")
+subSiteUrl <- paste0("https://www.wyniki.pl/mecz/", subSiteUrl, "/#/szczegoly-meczu/statystyki-meczu/0")
 
 # navigate to match statistics:
 
@@ -1359,11 +1363,15 @@ for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this 
   print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
   remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
-  
-  Sys.sleep(2) # this makes it so that the site always has the time to compile javascript code
-  obj1 <- remDr$findElements(using = "class name", "stat__category")
+  Sys.sleep(2)
+  obj1 <- remDr$findElements(using = "class name", "stat__row")
   if (length(obj1) == 0) {
-    obj1 <- remDr$findElements(using = "class name", "stat__category") # sometimes you need to double click
+    Sys.sleep(2)
+    obj1 <- remDr$findElements(using = "class name", "stat__row") # sometimes you need to double click
+  }
+  
+  for (k in 1:length(obj1)) {
+    obj1[[k]] <- obj1[[k]]$findChildElement(using = "class name", "stat__category")
   }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())

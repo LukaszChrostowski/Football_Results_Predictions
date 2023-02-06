@@ -1,3 +1,4 @@
+library(tidyverse)
 load("C:/Users/Kertoo/Desktop/Football_Results_Predictions/output/processed_data_averages.Rdata")
 
 df <- proccessed_data_averages
@@ -29,9 +30,9 @@ pr <- prcomp(dd)
 
 barplot(pr$sdev, col = "navy", names = colnames(pr$x))
 
-# choosing variables so that at least 77.5% of std.dev is explained
+# choosing variables so that at least 46% of std.dev is explained
 
-varNum <- which(((pr$sdev %>% cumsum()) / sum(pr$sdev)) > .775)[1]
+varNum <- which(((pr$sdev %>% cumsum()) / sum(pr$sdev)) > .4605395)[1]
 
 dd <- pr$x[, 1:varNum]
 
@@ -40,12 +41,15 @@ dd <- cbind(dd, model.frame(Wynik ~ Gospodarz + Gość + LowerLeague_Away + Lowe
 dd2 <- dd[-(1:(dim(dd1)[1])), ]
 dd1 <- dd[1:(dim(dd1)[1]), ]
 
-dd2$Wynik <- ifelse(dd2$Wynik == "H", 1, 0)
-dd1$Wynik <- ifelse(dd1$Wynik == "H", 1, 0)
+dd2$Wynik <- ifelse(dd2y == 2, 1, 0)
+dd1$Wynik <- ifelse(dd1y == 2, 1, 0)
 
 logitModel1 <- glm(formula = Wynik ~ ., family = binomial(), data = dd1)
 
-dd2$Wynik <- ifelse(dd2y == "A", 1, 0)
-dd1$Wynik <- ifelse(dd1y == "A", 1, 0)
+dd2$Wynik <- ifelse(dd2y == 1, 1, 0)
+dd1$Wynik <- ifelse(dd1y == 1, 1, 0)
 
 logitModel2 <- glm(formula = Wynik ~ ., family = binomial(), data = dd1, control = glm.control(maxit = 1000))
+
+mean(ifelse(predict(logitModel1) > 0, 2, ifelse(predict(logitModel2) > 0, 1, 0)) == dd1y)
+mean(ifelse(predict(logitModel1, dd2) > 0, 2, ifelse(predict(logitModel2, dd2) > 0, 1, 0)) == dd2y)
