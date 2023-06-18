@@ -1,9 +1,9 @@
 library(xgboost)
 library(caret)
 library(tidyverse)
-load("C:/Users/Kertoo/Desktop/Football_Results_Predictions/output/processed_data_averages_5.Rdata")
+load("C:/Users/Kertoo/Desktop/Football_Results_Predictions/output/processed_data_averages_7.Rdata")
 
-df <- proccessed_data_averages_5
+df <- proccessed_data_averages_7
 df$`Porażka Gospodarz` <- df$`Porażka Gospodarz` %>% as.numeric()
 df$`Porażka Gość` <- df$`Porażka Gość` %>% as.numeric()
 df$`Remis Gospodarz` <- df$`Remis Gospodarz` %>% as.numeric()
@@ -21,8 +21,10 @@ df_train <- df_train %>% drop_na
 # pooling
 df_train_y <- df_train %>% select("Wynik")
 df_test_y <- df_test %>% select("Wynik")
-df_train <- model.matrix(Wynik ~ . - 1 - Data - Sezon - Walkower, df_train)
-df_test <- model.matrix(Wynik ~ . - 1 - Data - Sezon - Walkower, df_test)
+N <- NROW(df_train)
+df_train <- model.matrix(Wynik ~ . - 1 - Data - Sezon - Walkower, rbind(df_train, df_test))
+df_test <- df_train[-(1:N),]
+df_train <- df_train[1:N,]
 
 train_pool <- xgb.DMatrix(data = df_train, label = df_train_y$Wynik %>% as.numeric() - 1)
 test_pool <- xgb.DMatrix(data = df_test, label = df_test_y$Wynik %>% as.numeric() - 1)
@@ -31,16 +33,17 @@ watchlist <- list(train = train_pool, test = test_pool)
 
 xgb_model <- xgb.train(
   watchlist = watchlist, 
-  nrounds = 50000, 
+  nrounds = 30000, 
   data = train_pool,
   params = list(
     objective = "multi:softmax", 
     eval_metric = "merror", 
     num_class = 3,
-    eta = .001,
-    max_depth = 5,
-    lambda = 0,
-    subsample  = .5
+    eta = .0005,
+    max_depth = 4,
+    subsample  = .5,
+    lambda = 1,
+    alpha = 1
   )
 )
 

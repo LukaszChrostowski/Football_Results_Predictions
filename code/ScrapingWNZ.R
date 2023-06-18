@@ -1163,7 +1163,7 @@ scrapedData2020and2021 <- K
 save(scrapedData2020and2021, file = "data/scrapedData2020and2021.Rdata")
 
 # 2021/2022 ####
-url <- "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2021-2022/wyniki/"
+url <- "https://www.wyniki.pl/pko-bp-ekstraklasa-2021-2022/wyniki"
 
 seleniumServer <- rsDriver(browser = "chrome",
                            #verbose = FALSE, 
@@ -1303,7 +1303,7 @@ scrapedData2021and2022 <- K
 save(scrapedData2021and2022, file = "data/scrapedData2021and2022.Rdata")
 
 # 2022/2023 ####
-url <- "https://www.wyniki.pl/pko-bp-ekstraklasa/wyniki/"
+url <- "https://www.wyniki.pl/pko-bp-ekstraklasa-2022-2023/wyniki/"
 
 seleniumServer <- rsDriver(browser = "firefox",
                            #verbose = FALSE,
@@ -1359,7 +1359,7 @@ statNames <- c(
 #   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
 #   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
 # }
-for (m in subSiteUrl) {# Not all maches in 2012/2013 have match statistics this is for ones with them
+for (m in subSiteUrl) {
   print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
   remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
