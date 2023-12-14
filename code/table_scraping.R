@@ -9,6 +9,11 @@ rs_driver_object <- rsDriver(browser = 'chrome',
                              verbose = FALSE,
                              port = free_port())
 
+# seleniumServer <- rsDriver(browser = "firefox",
+#                            #verbose = FALSE,
+#                            port = free_port(),
+#                            chromever = "107.0.5304.18")
+
 # create a client object
 remDr <- rs_driver_object$client
 
@@ -29,7 +34,8 @@ urls <- list("https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2011-2012/",
              "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2019-2020/",
              "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2020-2021/",
              "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2021-2022/",
-             "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2022-2023/")
+             "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2022-2023/",
+             "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2023-2024/")
 #11/12
 
 remDr$navigate(urls[[1]])

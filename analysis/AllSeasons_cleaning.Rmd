@@ -18,6 +18,7 @@ load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/d
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2020and2021.Rdata"))
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2021and2022.Rdata"))
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2022and2023.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2023and2024.Rdata"))
 
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/table_data.Rdata")) # load table for each season
 
@@ -41,17 +42,17 @@ library(knitr)
 # number of data columns for each season
 dataframes <- list(scrapedData2012and2013, scrapedData2013and2014, scrapedData2014and2015, scrapedData2015and2016,
                scrapedData2016and2017, scrapedData2017and2018, scrapedData2018and2019, scrapedData2019and2020,
-               scrapedData2020and2021, scrapedData2021and2022, scrapedData2022and2023)
+               scrapedData2020and2021, scrapedData2021and2022, scrapedData2022and2023, scrapedData2023and2024)
 
 dataframes_vector <- c("scrapedData2012and2013", "scrapedData2013and2014", "scrapedData2014and2015", "scrapedData2015and2016",
                        "scrapedData2016and2017", "scrapedData2017and2018", "scrapedData2018and2019", "scrapedData2019and2020",
-                       "scrapedData2020and2021", "scrapedData2021and2022", "scrapedData2022and2023")
+                       "scrapedData2020and2021", "scrapedData2021and2022", "scrapedData2022and2023", "scrapedData2023and2024")
 
 
 columns_number <- vector("numeric", length = length(dataframes))
 
   
-for(i in 1:11){
+for(i in 1:length(dataframes)){
     columns_number[i] <- length(colnames(dataframes[[i]]))
   }
   
@@ -82,6 +83,7 @@ new_scrapedData2019and2020 <- my_F(scrapedData2019and2020, "2019/20")
 new_scrapedData2020and2021 <- my_F(scrapedData2020and2021, "2020/21")
 new_scrapedData2021and2022 <- my_F(scrapedData2021and2022, "2021/22")
 new_scrapedData2022and2023 <- my_F(scrapedData2022and2023, "2022/23")
+new_scrapedData2023and2024 <- my_F(scrapedData2022and2023, "2023/24")
 
 joined_df_12_13 <- merge(new_scrapedData2012and2013, df_11_12, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>%
   merge(df_11_12, by.x = "Gość", by.y = "team", all.x = TRUE)
@@ -116,6 +118,9 @@ joined_df_21_22 <- merge(new_scrapedData2021and2022, df_20_21, by.x = "Gospodarz
 joined_df_22_23 <- merge(new_scrapedData2022and2023, df_21_22, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
   merge(df_21_22, by.x = "Gość", by.y = "team", all.x = TRUE)
 
+joined_df_23_24 <- merge(new_scrapedData2023and2024, df_22_23, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+  merge(df_22_23, by.x = "Gość", by.y = "team", all.x = TRUE)
+
 joined_data_12_13 <- merge(joined_df_12_13, df1 %>% select(club, season12.13), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season12.13), by.x = "Gość", by.y = "club", all.x = TRUE)
 
 joined_data_13_14 <- merge(joined_df_13_14, df1 %>% select(club, season13.14), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season13.14), by.x = "Gość", by.y = "club", all.x = TRUE)
@@ -131,11 +136,14 @@ joined_data_17_18 <- merge(joined_df_17_18, df1 %>% select(club, season17.18), b
 joined_data_18_19 <- merge(joined_df_18_19, df1 %>% select(club, season18.19), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season18.19), by.x = "Gość", by.y = "club", all.x = TRUE)
 
 joined_data_19_20 <- merge(joined_df_19_20, df1 %>% select(club, season19.20), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season19.20), by.x = "Gość", by.y = "club", all.x = TRUE)
+
 joined_data_20_21 <- merge(joined_df_20_21, df1 %>% select(club, season20.21), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season20.21), by.x = "Gość", by.y = "club", all.x = TRUE)
 
 joined_data_21_22 <- merge(joined_df_21_22, df1 %>% select(club, season21.22), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season21.22), by.x = "Gość", by.y = "club", all.x = TRUE)
 
 joined_data_22_23 <- merge(joined_df_22_23, df1 %>% select(club, season22.23), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season22.23), by.x = "Gość", by.y = "club", all.x = TRUE)
+
+joined_data_23_24 <- merge(joined_df_23_24, df1 %>% select(club, season23.24), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season23.24), by.x = "Gość", by.y = "club", all.x = TRUE)
 
 ```
 
