@@ -1503,7 +1503,10 @@ statNames <- c(
   "Bloki",
   "Ataki",
   "Niebezpieczne ataki",
-  "Czerwone kartki"      
+  "Czerwone kartki",
+  "Wykonane dośrodkowania",
+  "Pokonany dystans (km)",
+  "Oczekiwane bramki (xG)"
 )
 # for (m in subSiteUrl) {
 #   print(m)
@@ -1516,7 +1519,7 @@ for (m in subSiteUrl) {
   print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
   remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
   #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
-  Sys.sleep(1.2)
+  Sys.sleep(2.5)
   obj1 <- remDr$findElements(using = "class name", "section")
   while (!length(obj1)) {
     obj1 <- remDr$findElements(using = "class name", "section")
@@ -1528,9 +1531,11 @@ for (m in subSiteUrl) {
   # }
   outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
-  matchNames <- c(matchNames, outcome[2] %>% str_trim())
   outcome1 <- outcome1[!is.na(outcome1)]
-  xxx <- sapply(obj1[[1]]$findChildElements(using = "class name", "_row_lq1k0_9"), FUN = function(x) {(x$getElementText() %>% str_split(patter = "\n") %>% unlist())})
+  xxx <- sapply(
+    obj1[[1]]$findChildElements(using = "class name", "_row_n1rcj_9"), 
+    FUN = function(x) {(x$getElementText() %>% str_split(patter = "\n") %>% unlist())}
+  )
   if (!length(xxx)) {
     matchNames <- matchNames[1:(length(matchNames)-1)]
   }
@@ -1577,6 +1582,7 @@ for (m in subSiteUrl) {
     }
   }
   
+  matchNames <- c(matchNames, outcome[2] %>% str_trim())
   if (is.null(K)) {
     K <- c(valuesHome[statNames], valuesAway[statNames],
            outcome1[1], outcome1[2], participants,
