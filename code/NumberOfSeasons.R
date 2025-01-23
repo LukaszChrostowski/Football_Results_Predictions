@@ -2,7 +2,8 @@
 # df <- rbindlist(list(df_11_12, df_12_13, df_13_14, df_14_15, df_15_16, df_16_17,
 #                      df_17_18, df_18_19, df_19_20, df_20_21, df_21_22, df_22_23))
 df <- do.call("rbind", list(df_11_12, df_12_13, df_13_14, df_14_15, df_15_16, df_16_17,
-                            df_17_18, df_18_19, df_19_20, df_20_21, df_21_22, df_22_23))
+                            df_17_18, df_18_19, df_19_20, df_20_21, df_21_22, df_22_23,
+                            df_23_24, df_24_25))
 
 list_of_clubs <- unique(df$team)
 
@@ -111,4 +112,20 @@ for(i in 1:nrow(df1)){
   }
 }
 
+#23/24
+for(i in 1:nrow(df1)){
+  if(df1$club[i] %in% df_22_23$team){
+    df1$season23.24[i] <- df1$season22.23[i] + 1
+  } else{
+    df1$season23.24[i] <- df1$season22.23[i]
+  }
+}
 
+# 24/25
+for(i in 1:nrow(df1)){
+  if(df1$club[i] %in% df_23_24$team){
+    df1$season24.25[i] <- df1$season23.24[i] + 1
+  } else{
+    df1$season24.25[i] <- df1$season23.24[i]
+  }
+}

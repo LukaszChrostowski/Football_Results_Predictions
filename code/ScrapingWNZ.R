@@ -1458,9 +1458,9 @@ save(scrapedData2022and2023, file = "data/scrapedData2022and2023.Rdata")
 url <- "https://www.wyniki.pl/pko-bp-ekstraklasa-2023-2024/wyniki/"
 
 seleniumServer <- rsDriver(browser = "firefox",
-                           #verbose = FALSE,
-                           port = free_port(),
-                           chromever = "107.0.5304.18")
+                           #verbose = FALSE, 
+                           #chromever = "131.0.6778.265", # the lastest
+                           port = free_port())
 # Client object
 remDr <- seleniumServer$client
 
@@ -1533,7 +1533,7 @@ for (m in subSiteUrl) {
   outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
   outcome1 <- outcome1[!is.na(outcome1)]
   xxx <- sapply(
-    obj1[[1]]$findChildElements(using = "class name", "_row_n1rcj_9"), 
+    obj1[[1]]$findChildElements(using = "class name", "wcl-row_OFViZ"), #_row_n1rcj_9"
     FUN = function(x) {(x$getElementText() %>% str_split(patter = "\n") %>% unlist())}
   )
   if (!length(xxx)) {
@@ -1605,3 +1605,155 @@ colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), 
 rownames(K) <- matchNames
 scrapedData2023and2024 <- K
 save(scrapedData2023and2024, file = "data/scrapedData2023and2024.Rdata")
+
+# 2024/2025 ####
+url <- "https://www.wyniki.pl/pko-bp-ekstraklasa-2024-2025/wyniki/"
+
+seleniumServer <- rsDriver(browser = "firefox",
+                           #verbose = FALSE, 
+                           #chromever = "131.0.6778.265", # the lastest
+                           port = free_port())
+# Client object
+remDr <- seleniumServer$client
+
+remDr$maxWindowSize()
+remDr$navigate(url)
+# click on cookies info:
+cookies <- remDr$findElement(using = "xpath", '//*[@id="onetrust-reject-all-handler"]')
+cookies$clickElement()
+# click on more info:
+moreInfo <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div/a')
+moreInfo$clickElement()
+#moreInfo$clickElement() # may possibly cause an error if 
+# get urls to match statistics
+obj <- remDr$findElement(using = "xpath", '//*[@id="live-table"]/div[1]/div/div')
+subSiteUrl <- 
+  sapply(obj$findChildElements(using = "class name", "event__match"), FUN = function(x) {x$getElementAttribute("id")}) %>%
+  unlist()
+subSiteUrl <- sapply(subSiteUrl, FUN = function(x) {substr(x, start = 5, stop = 12)})
+subSiteUrl <- paste0("https://www.wyniki.pl/mecz/", subSiteUrl, "/#/szczegoly-meczu/statystyki-meczu/0")
+
+# navigate to match statistics:
+
+K <- NULL
+matchNames <- NULL
+statNames <- c(
+  "Posiadanie piłki",
+  "Sytuacje bramkowe",
+  "Strzały na bramkę",
+  "Strzały niecelne",
+  "Strzały zablokowane",
+  "Rzuty wolne",
+  "Rzuty rożne",
+  "Spalone",
+  "Wrzuty z autu",
+  "Interwencje bramkarzy",
+  "Faule",
+  "Żółte kartki",
+  "Podania",
+  "Podania celne",
+  "Bloki",
+  "Ataki",
+  "Niebezpieczne ataki",
+  "Czerwone kartki",
+  "Wykonane dośrodkowania",
+  "Pokonany dystans (km)",
+  "Oczekiwane bramki (xG)"
+)
+# for (m in subSiteUrl) {
+#   print(m)
+#   remDr$navigate(m)
+#   obj1 <- remDr$findElements(using = "class name", "stat__categoryName")
+#   K <- c(K, sapply(obj1, FUN = function(x) {x$getElementText()}) %>% unlist())
+# }
+for (m in subSiteUrl) {
+  #for (m in subSiteUrl[which(subSiteUrl == m):length(subSiteUrl)]) {
+  print(m)                    # sometimes selenium breaks because of cookies it is possible to just start the loop again
+  remDr$navigate(m)           # begining at which(subSiteUrl == m) no issues should be present
+  #if (which(subSiteUrl == m) == 1) {remDr$findElement(using = "id", "onetrust-reject-all-handler")$clickElement()} #this clicks cookies
+  Sys.sleep(2.5)
+  obj1 <- remDr$findElements(using = "class name", "section")
+  while (!length(obj1)) {
+    obj1 <- remDr$findElements(using = "class name", "section")
+  }
+  
+  # for (k in 1:length(obj1)) {
+  #   obj1[[k]] <- obj1[[k]]$findChildElement(#using = "class name", "_category_lq1k0_16")
+  #     using = "xpath", "/html/body/div[1]/div/div[9]/div[2]")
+  # }
+  outcome <- strsplit(x = (obj1[[1]]$getTitle())[[1]], split = "|", fixed = TRUE)[[1]]
+  outcome1 <- suppressWarnings((outcome[1] %>% strsplit(split = ""))[[1]] %>% as.numeric())
+  outcome1 <- outcome1[!is.na(outcome1)]
+  xxx <- sapply(
+    obj1[[1]]$findChildElements(using = "class name", "wcl-row_OFViZ"), #_row_n1rcj_9"
+    FUN = function(x) {(x$getElementText() %>% str_split(patter = "\n") %>% unlist())}
+  )
+  if (!length(xxx)) {
+    matchNames <- matchNames[1:(length(matchNames)-1)]
+  }
+  valuesHome <- xxx[1,]
+  names(valuesHome) <- xxx[2,]
+  #if (any(!(names(valuesHome) %in% statNames))) {stop("bad names")}
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesHome)][names(valuesHome)] <- valuesHome
+  valuesHome <- v1
+  valuesAway <- xxx[3,]
+  names(valuesAway) <- xxx[2,]
+  v1 <- rep(NA, length(statNames))
+  names(v1) <- statNames
+  v1[names(v1) %in% names(valuesAway)][names(valuesAway)] <- valuesAway
+  valuesAway <- v1
+  participants <- stringr::str_trim(strsplit(outcome[2], split = "-")[[1]], side = "both")
+  if (length(participants) == 3) {                                                 # fix for podbeskidzie bielsko biała and Bruk-Bet Termalica Nieciecza
+    if ("B" %in% participants) {                                                   #              (podbeskidzie B-B)               (Bruk-Bet T.)
+      if (which(participants == "B") == 3) {                                
+        participants <- c(participants[1], paste0(participants[2], participants[3]))
+      } else if (which(participants == "B") == 2) {
+        participants <- c(paste0(participants[1], participants[2]), participants[3])
+      } else {
+        stop("Check participants")
+      }
+    } else if ("Bruk" %in% participants) {
+      if (which(participants == "Bet T.") == 3) {                                         
+        participants <- c(participants[1], paste0(participants[2], participants[3]))
+      } else if (which(participants == "Bet T.") == 2) {
+        participants <- c(paste0(participants[1], participants[2]), participants[3])
+      } else {
+        stop("Check participants")
+      }
+    } else {
+      stop("Check participants")
+    }
+  } else if (length(participants) == 4) {
+    if (all(c("Bruk", "B") %in% participants)) {
+      participants <- c(paste0(participants[1], participants[2]), participants[3:4])
+      participants <- c(participants[1], paste0(participants[2], participants[3]))
+    } else {
+      stop("Check participants")
+    }
+  }
+  
+  matchNames <- c(matchNames, outcome[2] %>% str_trim())
+  if (is.null(K)) {
+    K <- c(valuesHome[statNames], valuesAway[statNames],
+           outcome1[1], outcome1[2], participants,
+           ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
+           remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]]) %>%
+      data.frame()
+  } else {
+    K <- data.frame(
+      K,
+      c(valuesHome[statNames], valuesAway[statNames],
+        outcome1[1], outcome1[2], participants,
+        ifelse(outcome1[1] > outcome1[2], "H", ifelse(outcome1[2] > outcome1[1], "A", "D")),
+        remDr$findElement(using = "class name", "duelParticipant__startTime")$getElementText()[[1]])
+    )
+  }
+}
+
+K <- t(K)
+colnames(K) <- c(paste0(statNames, " Gospodarz"), paste0(statNames, " Gość"), "Gole Gospodarz", "Gole Gość", "Gospodarz", "Gość", "Wynik", "Data")
+rownames(K) <- matchNames
+scrapedData2024and2025 <- K
+save(scrapedData2024and2025, file = "data/scrapedData2024and2025.Rdata")

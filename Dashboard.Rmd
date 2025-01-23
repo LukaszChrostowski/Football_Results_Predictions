@@ -1,0 +1,462 @@
+---
+title: "Analytics Report for Ekstraklasa"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    theme:
+      version: 4
+      bg: "#101010"
+      fg: "#FDF7F7" 
+      primary: "#ED79F9"
+      navbar-bg: "#3ADAC6"
+      base_font: 
+        google: Prompt
+      heading_font:
+        google: Sen
+      code_font:
+        google: 
+          # arguments to sass::font_google() 
+          family: JetBrains Mono
+          local: false
+    source_code: https://github.com/LukaszChrostowski/Football_Results_Predictions
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(lattice)
+library(shiny)
+
+load("output/processed_data.Rdata")
+load("data/contingencyTable.Rdata")
+df <- proccessed_data
+```
+
+
+```{r}
+# FUNCTIONS
+
+# Descriptive plots for the choosen season
+ConvFun <- function(data) {
+  
+  data[data == "H"] <- 1
+  data[data == "D"] <- 2
+  data[data == "A"] <- 3
+  
+  for (col in colnames(data)) {
+    
+    data[, col] <- as.numeric(data[, col])
+    
+  }
+  data <- as.matrix(data)
+  data
+}
+
+levelplotFun <- function(data){
+  
+  plt <- levelplot(t(data[c(nrow(data):1), ]), scales=list(x=list(rot=45)),
+                   col.regions = colorRampPalette(c("green", "yellow", "red"))(100),
+                   colorkey=FALSE,
+                   xlab = "Away Team", ylab = "Home Team")
+  plt
+}
+```
+
+{.sidebar}
+======================================================================
+
+```{r}
+selectInput("x_variable", label = "First variable:",
+            choices = c("Posiadanie piłki Gospodarz", "Sytuacje bramkowe Gospodarz", "Strzały na bramkę Gospodarz"  ,  
+                        "Strzały niecelne Gospodarz", "Rzuty rożne Gospodarz", "Interwencje bramkarzy Gospodarz",
+                        "Faule Gospodarz", "Rzuty wolne Gospodarz", "Auty bramkowe Gospodarz", 
+                        "Posiadanie piłki Gość", "Sytuacje bramkowe Gość", "Strzały na bramkę Gość",      
+                        "Strzały niecelne Gość", "Interwencje bramkarzy Gość",    
+                        "Strzały zablokowane Gospodarz", "Strzały zablokowane Gość",     
+                        "Ataki Gospodarz",  "Niebezpieczne ataki Gospodarz",
+                        "Ataki Gość",   "Niebezpieczne ataki Gość", "Podania Gospodarz",          
+                        "Podania Gość", "Podania celne Gospodarz", "Podania celne Gość"),
+  selected = "`Posiadanie piłki Gospodarz`")
+selectInput("y_variable", label = "Second variable:",
+            choices = c("Posiadanie piłki Gospodarz", "Sytuacje bramkowe Gospodarz", "Strzały na bramkę Gospodarz"  ,  
+                        "Strzały niecelne Gospodarz", "Rzuty rożne Gospodarz", "Interwencje bramkarzy Gospodarz",
+                        "Faule Gospodarz", "Rzuty wolne Gospodarz", "Auty bramkowe Gospodarz", 
+                        "Posiadanie piłki Gość", "Sytuacje bramkowe Gość", "Strzały na bramkę Gość",      
+                        "Strzały niecelne Gość", "Interwencje bramkarzy Gość",    
+                        "Strzały zablokowane Gospodarz", "Strzały zablokowane Gość",     
+                        "Ataki Gospodarz",  "Niebezpieczne ataki Gospodarz",
+                        "Ataki Gość",   "Niebezpieczne ataki Gość", "Podania Gospodarz",          
+                        "Podania Gość", "Podania celne Gospodarz", "Podania celne Gość"),
+  selected = "`Posiadanie piłki Gość`")
+selectInput("club", label = "Club to Analyze",
+            choices = unique(df$Gospodarz), selected = "Lech Poznań")
+selectInput("season", label = "Season to Analyze",
+            choices = c(as.vector(unique(df$Sezon)), "all"), selected = "all")
+```
+
+TODO DESCRIPTION / LEGEND
+
+Author 1: [Łukasz Chrostowski](https://github.com/LukaszChrostowski) 
+
+Author 2: [Piotr Chlebicki](https://github.com/Kertoo)
+
+Scatter plots
+======================================================================
+
+Row {data-height=650}
+-----------------------------------------------------------------------
+### Scatter plots
+
+```{r}
+renderPlotly({
+  plot <- ggplot(data = df, aes_string(x = paste("`", input$x_variable, "`", sep = ""), y = paste("`", input$y_variable, "`", sep = ""))) +
+    geom_point() +
+    xlab(input$x_variable) +
+    ylab(input$y_variable) +
+    ggtitle(paste(input$x_variable, "vs", input$y_variable))
+  plot
+  
+})
+```
+
+
+Plots by club
+======================================================================
+Row
+-----------------------------------------------------------------------
+
+### With whom did the club face most often?
+
+```{r}
+renderPlotly({
+  club <- input$club
+  df_club <- df
+    # Z kim najczęściej się mierzyli
+  dff1 <- df_club %>% filter(Gospodarz == club) %>% group_by(Gość) %>% summarise(n = n()) %>% arrange(-n)
+  dff2 <- df_club %>% filter(Gość == club) %>% group_by(Gospodarz) %>% summarise(n = n()) %>% arrange(-n)
+  colnames(dff1) <- colnames(dff2) <- c("Club", "n")
+  merge_df <- merge(dff1, dff2, by = "Club")
+  merge_df$n <- merge_df$n.x + merge_df$n.y
+  merge_df <- merge_df %>% arrange(-n) %>% head(8)
+  
+  g1 <- ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
+    geom_bar(stat = "identity") +
+    xlab("Club") +
+    ylab("Number of the games") +
+    scale_fill_manual(values = 1:nrow(merge_df)) +
+    guides(fill = FALSE) +
+    theme_dark()
+  g1
+})
+```
+
+Row
+-----------------------------------------------------------------------
+
+### With whom did the club win most often?
+
+```{r}
+renderPlotly({
+    club <- input$club
+    df_club <- df
+     # Z kim najczęściej wygrywali
+    dff1 <- df_club %>% filter(Gospodarz == club) %>% group_by(Gość) %>% filter(Wynik == "H") %>% summarise(n = n()) %>% arrange(-n)
+    dff2 <- df_club %>% filter(Gość == club) %>% group_by(Gospodarz) %>% filter(Wynik == "A") %>% summarise(n = n()) %>% arrange(-n)
+    colnames(dff1) <- colnames(dff2) <- c("Club", "n")
+    merge_df <- merge(dff1, dff2, by = "Club") 
+    merge_df$n <- merge_df$n.x + merge_df$n.y
+    merge_df <- merge_df %>% arrange(-n) %>% head(8)
+    
+    g2 <- ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
+      geom_bar(stat = "identity") +
+      xlab("Club") +
+      ylab("Number of the games") +
+      scale_fill_manual(values = 1:nrow(merge_df)) +
+      guides(fill = FALSE) +
+      theme_dark()
+    g2
+    
+})
+```
+
+Row
+-----------------------------------------------------------------------
+
+### With whom did the club draw most often?
+
+```{r}
+renderPlotly({
+    club <- input$club
+    df_club <- df
+    # Z kim najczęściej remisowali
+    dff1 <- df_club %>% filter(Gospodarz == club) %>% group_by(Gość)  %>% filter(Wynik == "D") %>% summarise(n = n()) %>% arrange(-n)
+    dff2 <- df_club %>% filter(Gość == club) %>% group_by(Gospodarz) %>% filter(Wynik == "D") %>% summarise(n = n()) %>% arrange(-n)
+    colnames(dff1) <- colnames(dff2) <- c("Club", "n")
+    merge_df <- merge(dff1, dff2, by = "Club") 
+    merge_df$n <- merge_df$n.x + merge_df$n.y
+    merge_df <- merge_df %>% arrange(-n) %>% head(8)
+    
+    g3 <- ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
+      geom_bar(stat = "identity") +
+      xlab("Club") +
+      ylab("Number of the games") +
+      scale_fill_manual(values = 1:nrow(merge_df)) +
+      guides(fill = FALSE) +
+      theme_dark()
+    g3
+})
+```
+
+Row
+-----------------------------------------------------------------------
+### With whom did the club lose most often?
+
+```{r}
+renderPlotly({
+    club <- input$club
+  df_club <- df
+  # Z kim najczęściej przegrywali
+  dff1 <- df_club %>% filter(Gospodarz == club) %>% group_by(Gość) %>% filter(Wynik == "A") %>% summarise(n = n()) %>% arrange(-n)
+  dff2 <- df_club %>% filter(Gość == club) %>% group_by(Gospodarz) %>% filter(Wynik == "H") %>% summarise(n = n()) %>% arrange(-n)
+  colnames(dff1) <- colnames(dff2) <- c("Club", "n")
+  merge_df <- merge(dff1, dff2, by = "Club")
+  merge_df$n <- merge_df$n.x + merge_df$n.y
+  merge_df <- merge_df %>% arrange(-n) %>% head(8)
+  
+  g4 <- ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
+    geom_bar(stat = "identity") +
+    xlab("Club") +
+    ylab("Number of the games") +
+    scale_fill_manual(values = 1:nrow(merge_df)) +
+    guides(fill = FALSE) +
+    theme_dark()
+  g4
+})
+```
+
+Plots by season
+======================================================================
+
+Row {data-height=650}
+-----------------------------------------------------------------------
+
+### Heatmap for the results
+
+```{r}
+renderPlot({
+  season <- input$season
+  if (season != "all") {
+    df <- df %>% filter(Sezon == season)
+    ct <-  switch(season,
+              "2012/13" = ContTable_1213,
+              "2013/14" = ContTable_1314,
+              "2014/15" = ContTable_1415,
+              "2015/16" = ContTable_1516,
+              "2016/17" = ContTable_1617,
+              "2017/18" = ContTable_1718,
+              "2018/19" = ContTable_1819,
+              "2019/20" = ContTable_1920,
+              "2020/21" = ContTable_2021,
+              "2021/22" = ContTable_2122)
+  ct <- ConvFun(ct)
+  levelplotFun(ct)
+  } else {
+  levelplotFun(ConvFun(ContTable_2122))
+  }
+})
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Results distribution
+
+```{r}
+renderPlotly({
+  
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+  ggplot(data = df, aes(x = Wynik, fill = Wynik)) +
+    geom_bar() +
+    ylab("Number of the results") +
+     xlab("Result") +
+    scale_fill_manual(values = unique(df$Wynik)) +
+    guides(fill = FALSE)
+
+})
+```
+
+Row
+-----------------------------------------------------------------------
+### Distribution of the goals
+
+```{r}
+renderPlotly({
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+  ggplot(data = df, aes(x = `Gole Gospodarz` + `Gole Gość` )) + 
+  geom_histogram(bins = 10, color = "black", fill = "white") +
+  xlab("Number of goals in the game")
+})
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Sum of goals during the seasons
+
+```{r}
+renderPlotly({
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+  goals_by_season <- df %>% group_by(Sezon) %>% summarise(sum = sum(`Gole Gospodarz` + `Gole Gość`))
+  
+   ggplot(data = goals_by_season, aes(x = Sezon, y = sum, fill = Sezon)) +
+    geom_bar(stat = "identity") +
+    xlab("Season") +
+    ylab("Goals total") +
+    scale_fill_manual(values = 1:nrow(goals_by_season)) +
+    guides(fill = FALSE)
+})
+```
+
+Row
+-----------------------------------------------------------------------
+### Ranking of the most effective clubs
+
+```{r}
+renderPlotly({
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+  # Number of goals by each club (sum, mean)
+  A <- df %>% group_by(Gospodarz) %>% summarise(sum = sum(`Gole Gospodarz`)) %>% arrange(-sum)
+  B <- df %>% group_by(Gość) %>% summarise(sum = sum(`Gole Gość`)) %>% arrange(-sum)
+  colnames(A) <- colnames(B) <- c("Klub", "gole")
+  mergeAB <- merge(A, B, by = "Klub")
+  mergeAB$gole <- mergeAB$gole.x + mergeAB$gole.y
+  goals_by_club <- mergeAB %>% arrange(-gole) %>% head(8)
+  
+  ggplot(data = goals_by_club, aes(x = factor(Klub, levels = Klub), y = gole, fill = Klub)) +
+    geom_bar(stat = "identity") +
+    xlab("Season") +
+    ylab("Scored goals total") +
+    scale_fill_manual(values = 1:nrow(goals_by_club)) +
+    guides(fill = FALSE) +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1))
+})
+```
+
+Row
+-----------------------------------------------------------------------
+### Ranking of the clubs by number of the red cards
+
+```{r}
+renderPlotly({
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+  A <- df %>% group_by(Gospodarz) %>% summarise(sum_red = sum(`Czerwone kartki Gospodarz`),
+                                                sum_yellow = sum(`Żółte kartki Gospodarz`))
+  B <- df %>% group_by(Gość) %>% summarise(sum_red = sum(`Czerwone kartki Gość`),
+                                           sum_yellow = sum(`Żółte kartki Gość`)) 
+  colnames(A) <- colnames(B) <-  c("Club", "red_cards", "yellow_cards")
+  mergeAB <- merge(A, B, by = "Club")
+  mergeAB$red_cards <- mergeAB$red_cards.x + mergeAB$red_cards.y
+  mergeAB$yellow_cards <- mergeAB$yellow_cards.x + mergeAB$yellow_cards.y
+  red_cards_by_club <- mergeAB %>% arrange(-red_cards) %>% head(8)
+  
+   ggplot(data = red_cards_by_club, aes(x = factor(Club, levels = Club), y = red_cards, fill = Club)) +
+        geom_bar(stat = "identity") +
+        xlab("Season") +
+        ylab("Red cards total") +
+        scale_fill_manual(values = 1:nrow(red_cards_by_club)) +
+        guides(fill = FALSE) +
+        theme(axis.text.x = element_text(angle = 30, hjust = 1))
+
+})
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Ranking of the clubs by number of the yellow cards
+```{r}
+renderPlotly({
+
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+  A <- df %>% group_by(Gospodarz) %>% summarise(sum_red = sum(`Czerwone kartki Gospodarz`),
+                                                sum_yellow = sum(`Żółte kartki Gospodarz`))
+  B <- df %>% group_by(Gość) %>% summarise(sum_red = sum(`Czerwone kartki Gość`),
+                                           sum_yellow = sum(`Żółte kartki Gość`)) 
+  colnames(A) <- colnames(B) <-  c("Club", "red_cards", "yellow_cards")
+  mergeAB <- merge(A, B, by = "Club")
+  mergeAB$red_cards <- mergeAB$red_cards.x + mergeAB$red_cards.y
+  mergeAB$yellow_cards <- mergeAB$yellow_cards.x + mergeAB$yellow_cards.y
+  red_cards_by_club <- mergeAB %>% arrange(-red_cards) %>% head(8)
+  yellow_cards_by_club <- mergeAB %>% arrange(-yellow_cards) %>% head(8)
+  
+  g8 <- ggplot(data = yellow_cards_by_club, aes(x = factor(Club, levels = Club), y = yellow_cards, fill = Club)) +
+    geom_bar(stat = "identity") +
+    xlab("Season") +
+    ylab("Yellow cards total") +
+    scale_fill_manual(values = 1:nrow(yellow_cards_by_club)) +
+    guides(fill = FALSE)
+})
+```
+
+Row
+-----------------------------------------------------------------------
+### Number of the games per month
+```{r}
+renderPlotly({
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+  # Plots by date of the match
+  df_date <- df %>% group_by(month(Data)) %>% summarise(n = n()) %>% arrange(-n) %>% head()
+  colnames(df_date) <- c("month", "n")
+  df_date$month <- as.factor(month.name[df_date$month])
+  
+  ggplot(data = df_date, aes(x = factor(month, levels = month), y = n, fill = month)) +
+    geom_bar(stat = "identity") +
+    xlab("Month") +
+    ylab("Number of the games") +
+    scale_fill_manual(values = 1:nrow(df_date)) +
+    guides(fill = FALSE)
+})
+```
+
+Row
+-----------------------------------------------------------------------
+### Number of the games per hour
+```{r}
+renderPlotly({
+  season <- input$season
+  if (season != "all") df <- df %>% filter(Sezon == season)
+  
+    df_date <- df %>% group_by(hour(Data)) %>% summarise(n = n()) %>% arrange(-n) %>% head()
+  colnames(df_date) <- c("hour", "n")
+  df_date$hour <- as.factor(df_date$hour)
+  
+  ggplot(data = df_date, aes(x = factor(hour, levels = hour), y = n, fill = hour)) +
+    geom_bar(stat = "identity") +
+    xlab("Hour") +
+    ylab("Number of the games") +
+    scale_fill_manual(values = 1:nrow(df_date)) +
+    guides(fill = FALSE)
+})
+```
+
+

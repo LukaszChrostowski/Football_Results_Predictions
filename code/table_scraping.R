@@ -4,9 +4,9 @@ library(RSelenium)
 library(netstat)
 
 # start the server
-rs_driver_object <- rsDriver(browser = 'chrome',
-                             chromever = '105.0.5195.52',
-                             verbose = FALSE,
+rs_driver_object <- rsDriver(browser = "firefox",
+                             #verbose = FALSE, 
+                             #chromever = "131.0.6778.265", # the lastest
                              port = free_port())
 
 # seleniumServer <- rsDriver(browser = "firefox",
@@ -35,7 +35,8 @@ urls <- list("https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2011-2012/",
              "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2020-2021/",
              "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2021-2022/",
              "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2022-2023/",
-             "https://www.wynikinazywo.pl/pko-bp-ekstraklasa-2023-2024/")
+             "https://www.wyniki.pl/pko-bp-ekstraklasa-2023-2024/wyniki/",
+             "https://www.wyniki.pl/pko-bp-ekstraklasa-2024-2025/wyniki/")
 #11/12
 
 remDr$navigate(urls[[1]])
@@ -59,19 +60,19 @@ df_11_12$place <- df_11_12$place %>% str_replace_all("[.]", "") %>% as.numeric()
 
 #12/13
   
-  remDr$navigate(urls[[2]])
-  
-  cookies <- remDr$findElement(using = "xpath", '//*[@id="onetrust-reject-all-handler"]')
-  cookies$clickElement()
-  
-  Tabela <- remDr$findElement(using = 'class', 'standings_table')
-  Tabela$clickElement()
-  
-  miejsce <- remDr$findElements(using = "class", "tableCellRank")
-  miejsca <- lapply(miejsce, function(x) x$getElementText()) %>% unlist()
-  
-  Teams <- remDr$findElements(using = "class", "tableCellParticipant__name")
-  Team <- lapply(Teams, function(x) x$getElementText()) %>% unlist()
+remDr$navigate(urls[[2]])
+
+cookies <- remDr$findElement(using = "xpath", '//*[@id="onetrust-reject-all-handler"]')
+cookies$clickElement()
+
+Tabela <- remDr$findElement(using = 'class', 'standings_table')
+Tabela$clickElement()
+
+miejsce <- remDr$findElements(using = "class", "tableCellRank")
+miejsca <- lapply(miejsce, function(x) x$getElementText()) %>% unlist()
+
+Teams <- remDr$findElements(using = "class", "tableCellParticipant__name")
+Team <- lapply(Teams, function(x) x$getElementText()) %>% unlist()
 
 
 df_12_13 <- data.frame(team = Team, place = miejsca)
@@ -285,6 +286,46 @@ Team <- lapply(Teams, function(x) x$getElementText()) %>% unlist()
 df_22_23 <- data.frame(team = Team, place = miejsca)
 
 df_22_23$place <- df_22_23$place %>% str_replace_all("[.]", "") %>% as.numeric()
+
+#23/24
+
+remDr$navigate(urls[[13]])
+
+cookies <- remDr$findElement(using = "xpath", '//*[@id="onetrust-reject-all-handler"]')
+cookies$clickElement()
+
+Tabela <- remDr$findElement(using = 'class', 'standings_table')
+Tabela$clickElement()
+
+miejsce <- remDr$findElements(using = "class", "tableCellRank")
+miejsca <- lapply(miejsce, function(x) x$getElementText()) %>% unlist()
+
+Teams <- remDr$findElements(using = "class", "tableCellParticipant__name")
+Team <- lapply(Teams, function(x) x$getElementText()) %>% unlist()
+
+df_23_24 <- data.frame(team = Team, place = miejsca)
+
+df_23_24$place <- df_23_24$place %>% str_replace_all("[.]", "") %>% as.numeric()
+
+# TODO execute at the end of 24/25 
+
+remDr$navigate(urls[[14]])
+
+cookies <- remDr$findElement(using = "xpath", '//*[@id="onetrust-reject-all-handler"]')
+cookies$clickElement()
+
+Tabela <- remDr$findElement(using = 'class', 'standings_table')
+Tabela$clickElement()
+
+miejsce <- remDr$findElements(using = "class", "tableCellRank")
+miejsca <- lapply(miejsce, function(x) x$getElementText()) %>% unlist()
+
+Teams <- remDr$findElements(using = "class", "tableCellParticipant__name")
+Team <- lapply(Teams, function(x) x$getElementText()) %>% unlist()
+
+df_24_25 <- data.frame(team = Team, place = miejsca)
+
+df_24_25$place <- df_24_25$place %>% str_replace_all("[.]", "") %>% as.numeric()
 
 
 
