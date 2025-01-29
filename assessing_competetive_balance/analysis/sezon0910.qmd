@@ -1,0 +1,66 @@
+---
+title: "Sezon0910"
+author: "Łukasz Chrostowski"
+output:
+  html_document: default
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r, message=FALSE, include=FALSE}
+source("MCMC_main.R")
+## Choose Premier Season
+season<-"1112"
+O <- ConvFun(ContTable_1112)
+N <- nrow(O)
+y <- to_adjacency(O)
+```
+
+```{r, message=FALSE, include=FALSE}
+objj <- mcmc(season = season, N = N, y = y, O = O)
+Final_O <- objj$Final_O
+O <- objj$O
+season_lab <- objj$season_lab
+Noisy_True_K <- objj$Noisy_True_K
+K_maxmax <- objj$K_maxmax
+how_many_top <- objj$how_many_top
+N <- objj$N
+K_estimated <- objj$K_estimated
+```
+
+```{r}
+library("lattice")
+palf <-colorRampPalette(c("green3", "yellow", "red1"))
+levelplot(t(O[nrow(O):1,]),
+                col.regions=palf(100), xlab = NULL, ylab = NULL, colorkey = FALSE,
+                main =  list(label=paste0("Results table season: ", season_lab), cex=2.4),
+                scales = list(list(alternating=1),x=list(cex = 1,rot=45),y=list(cex=0.8)),)
+```
+
+```{r}
+plot(Noisy_True_K, col="#00000033",ylab="K", xlab=" ", cex.lab=1.7,
+     ylim=c(1,K_maxmax+1), yaxt="n")
+```
+
+```{r}
+if (K_estimated>1){
+levelplot(t(Final_O[nrow(Final_O):1,]),
+          col.regions=palf(100), xlab = NULL, ylab = NULL, colorkey = FALSE,
+          main = list(paste0("Results table ordered by block membership for season: ",
+                             season), cex= 2),
+          scales = list(list(alternating=1), x=list(cex=1),y=list(cex=0.8)),
+          panel = function(...){
+            panel.levelplot(...)
+            panel.abline(h = (N-how_many_top)+0.5, lw = 2.5)
+            panel.abline(v = how_many_top+0.5, lw =2.5)
+          })
+}
+```
