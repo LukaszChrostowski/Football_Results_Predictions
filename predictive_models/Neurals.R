@@ -1,7 +1,7 @@
 library(caret)
 library(neuralnet)
 library(tidyverse)
-load("output/processed_data_averages.Rdata")
+load("output_data/processed_data_averages.Rdata")
 
 df <- proccessed_data_averages
 AAA <- apply(df[, sapply(df, is.numeric)], MARGIN = 2, FUN = function(x) {sum(is.na(x))}) / nrow(df)

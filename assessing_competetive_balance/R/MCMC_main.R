@@ -25,14 +25,13 @@
 rm(list = ls())
 #cat("\014")
 
-source("R/functions.R")
-load("~/Desktop/AssessingCompetitiveBalance/data/contTables.Rdata")
+source("assessing_competetive_balance/R/functions.R")
 
 ## Load functions used in the MCMC algorithm
-source("R/SBM_FUNCTIONS.R")
+source("assessing_competetive_balance/R/SBM_FUNCTIONS.R")
 ####################################################################################
 ## Label correction and analysis
-source("R/LABEL_CORRECTION_AND_ANALYSIS.R")
+source("assessing_competetive_balance/R/LABEL_CORRECTION_AND_ANALYSIS.R")
 
 library(seqinr)   #necessary for the swap function
 library(plyr)     #to use mapvalues

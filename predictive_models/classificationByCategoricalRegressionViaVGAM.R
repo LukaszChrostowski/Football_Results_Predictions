@@ -1,31 +1,13 @@
----
-title: "classificationByCategoricalRegressionViaVGAM"
-author: "Piotr Chlebicki"
-date: "2022-09-24"
-output: html_document
----
-
-Jak narazie working version.
-
-Packages:
-
-```{r}
 library(tidyverse)
 library(VGAM)
-```
 
-```{r}
-load("output/processed_data_averages.Rdata")
-```
+load("output_data/processed_data_averages.Rdata")
 
-```{r}
 model <- vglm(family = acat(), formula = Wynik ~ Gość + Gospodarz, data = proccessed_data_averages)
 A <- apply(model@fitted.values, MARGIN = 1, which.max)
 res <- ifelse(A == 1, "A", ifelse(A == 2, "D", "H"))
 mean(proccessed_data_averages$Wynik != res)
-```
 
-```{r}
 df <- proccessed_data_averages
 df <- df[!(df$Sezon == "2022/23"), ]
 AAA <- apply(df[, sapply(df, is.numeric)], MARGIN = 2, FUN = function(x) {sum(is.na(x))}) / nrow(df)
@@ -37,15 +19,10 @@ formula <- Wynik ~ Gospodarz + Gość + `Posiadanie piłki Gospodarz` + `Sytuacj
 
 model2 <- vglm(family = acat(), formula = formula, data = df1, 
                control = vglm.control(epsilon = .Machine$double.eps, maxit = 100, trace = TRUE, stepsize = .5))
-```
-
-```{r}
 A <- apply(model2@fitted.values, MARGIN = 1, which.max)
 res <- ifelse(A == 1, "A", ifelse(A == 2, "D", "H"))
 mean(df1$Wynik != res)
-```
 
-```{r}
 df2 <- proccessed_data_averages
 df2 <- df2[df2$Sezon == "2022/23", ]
 AAA <- apply(df2[, sapply(df2, is.numeric)], MARGIN = 2, FUN = function(x) {sum(is.na(x))}) / nrow(df2)
@@ -54,11 +31,7 @@ df2 <- df2 %>% mutate_if(is.numeric, ~replace_na(.,mean(., na.rm = TRUE)))
 A <- predict(model, df2, type = "response")
 res <- ifelse(A == 1, "A", ifelse(A == 2, "D", "H"))
 mean(df2$Wynik != res)
-```
 
-```{r}
 A <- predict(model2, df2, type = "response")
 res <- ifelse(A == 1, "A", ifelse(A == 2, "D", "H"))
 mean(df2$Wynik != res)
-```
-

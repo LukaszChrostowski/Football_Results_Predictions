@@ -4,10 +4,29 @@ library(RSelenium)
 library(netstat)
 library(dplyr)
 
-seleniumServer <- rsDriver(browser = "chrome",
-                           #verbose = FALSE,
-                           port = free_port(),
-                           chromever = "106.0.5249.21")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2012and2013.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2013and2014.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2014and2015.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2015and2016.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2016and2017.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2017and2018.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2018and2019.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2019and2020.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2020and2021.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2021and2022.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2022and2023.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2023and2024.Rdata")
+load("~/Desktop/Football_Results_Predictions/data/scrapedData2024and2025.Rdata")
+
+# seleniumServer <- rsDriver(browser = "chrome",
+#                            #verbose = FALSE,
+#                            port = free_port(),
+#                            chromever = "106.0.5249.21")
+
+seleniumServer <- rsDriver(browser = "firefox",
+                             #verbose = FALSE,
+                             #chromever = "131.0.6778.265", # the lastest
+                             port = free_port())
 # Client object
 remDr <- seleniumServer$client
 
@@ -623,10 +642,9 @@ save(ssn98_99,
      ssn20_21,
      ssn21_22,
      ssn22_23,
-     ssn_23_24,
-     ssn_24_25,
-     file = "ssn.Rdata")
-
+     ssn23_24,
+     ssn24_25,
+     file = "data/results.Rdata")
 
 
 

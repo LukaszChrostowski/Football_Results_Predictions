@@ -1,6 +1,7 @@
 library(rlist)
 library(dplyr)
 library(tidyr)
+load("data/results.Rdata")
 
 ssn01_02 <- cleaningFun(ssn01_02)
 ssn13_14 <- cleaningFun(ssn13_14)
@@ -85,5 +86,5 @@ save(ContTable_9899,
      ContTable_2122,
      ContTable_2223,
      ContTable_2324,
-     file = "contTables.Rdata")
+     file = "data/contingency_table_update.Rdata")
 

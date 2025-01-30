@@ -1,9 +1,9 @@
 library(tidyverse)
 library(caret)
-load("output/processed_data.Rdata")
+load("output_data/processed_data.Rdata")
 colnames(proccessed_data)[35] <- "Liczba sezonów Gość"
 
-numOfLastPlayedGames <- 5 # change this to change the number of last games taken into consideration
+numOfLastPlayedGames <- 7 # change this to change the number of last games taken into consideration
 dW <- dummyVars(formula = " ~ .", data = proccessed_data %>% select(Wynik))
 dW <- data.frame(predict(dW, proccessed_data %>% select(Wynik)))
 dW <- cbind(dW, dW)
@@ -67,5 +67,5 @@ proccessed_data_averages$`Remis Gospodarz` <- proccessed_data_averages$`Remis Go
 proccessed_data_averages$`Porażka Gość` <- proccessed_data_averages$`Porażka Gość` %>% as.factor()
 proccessed_data_averages$`Remis Gość` <- proccessed_data_averages$`Remis Gość` %>% as.factor()
 
-proccessed_data_averages_5 <- proccessed_data_averages
-save(proccessed_data_averages_5, file = "output/processed_data_averages_5.Rdata")
+proccessed_data_averages_7 <- proccessed_data_averages
+save(proccessed_data_averages_7, file = "output_data/processed_data_averages_7.Rdata")

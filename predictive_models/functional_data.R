@@ -4,7 +4,7 @@ library(fda.usc)
 library(tidyverse)
 library(FDboost)
 
-load("C:/Users/Kertoo/Desktop/Football_Results_Predictions/output/processed_data.Rdata")
+load("output_data/processed_data.Rdata")
 
 invalid_cols <- sapply(proccessed_data, FUN = function(x) {sum(is.na(x))}) / NROW(proccessed_data) > .1
 invalid_cols <- invalid_cols[invalid_cols] %>% names

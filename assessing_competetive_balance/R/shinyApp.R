@@ -1,11 +1,10 @@
 library(shiny)
 library(shinythemes)
-
-#load("~/Desktop/AssessingCompetitiveBalance/data/contTables.Rdata")
-source("R/MCMC_main.R")
+source("assessing_competetive_balance/R/MCMC_main.R")
+source("assessing_competetive_balance/R/functions.R")
+load("data/contingency_table_update.Rdata")
 
 ui <- fluidPage(theme = shinytheme("united"),
-
 
   headerPanel('Konkurencyjność sezonu ekstraklasy'),
 
@@ -16,8 +15,9 @@ ui <- fluidPage(theme = shinytheme("united"),
                             "sezon 03/04", "sezon 04/05", "sezon 05/06", "sezon 06/07", "sezon 07/08",
                             "sezon 08/09", "sezon 09/10", "sezon 10/11",
                             "sezon 11/12", "sezon 12/13", "sezon 13/14", "sezon 14/15", "sezon 15/16", "sezon 16/17", "sezon 17/18",
-                            "sezon 18/19", "sezon 19/20", "sezon 20/21", "sezon 21/22"),
-                selected = "sezon 07/08"),
+                            "sezon 18/19", "sezon 19/20", "sezon 20/21", "sezon 21/22",
+                            "sezon 22/23", "sezon 23/24"),
+                selected = "sezon 23/24"),
   ),
 
   mainPanel(
@@ -56,48 +56,49 @@ server <- function(input, output){
           "sezon 19/20" = ContTable_1920,
           "sezon 20/21" = ContTable_2021,
           "sezon 21/22" = ContTable_2122,
+          "sezon 22/23" = ContTable_2223,
+          "sezon 23/24" = ContTable_2324
            )
   })
-
-  df <- reactive({
+  # Utworzenie reaktywnego obiektu przechowującego wynik mcmc
+  mcmc_results <- reactive({
     O <- ConvFun(dataset())
     N <- nrow(O)
     y <- to_adjacency(O, N)
     season <- input$season
-    objj <- mcmc(season = season, N = N, y = y, O = O)
-    data.frame(miejsce = 1:N, zespół = rownames(objj$table), punkty = objj$table[,1])
+    mcmc(season = season, N = N, y = y, O = O)
   })
-
+  
+  df <- reactive({
+    objj <- mcmc_results()
+    data.frame(miejsce = 1:nrow(objj$table), 
+               zespół = rownames(objj$table), 
+               punkty = objj$table[,1])
+  })
+  
   output$LvlPlot <- renderPlot({
-    O <- ConvFun(dataset())
-    N <- nrow(O)
-    y <- to_adjacency(O, N)
-    season <- input$season
-    objj <- mcmc(season = season, N = N, y = y, O = O)
+    objj <- mcmc_results()
     Final_O <- objj$Final_O
     O <- objj$O
     season_lab <- input$season
+    
     library("lattice")
-    palf <-colorRampPalette(c("green3", "yellow", "red1"))
+    palf <- colorRampPalette(c("green3", "yellow", "red1"))
     levelplot(t(O[nrow(O):1,]),
               col.regions=palf(100), xlab = NULL, ylab = NULL, colorkey = FALSE,
-              main =  list(label=paste0("Tabela wyników: ", season_lab), cex=2.4),
-              scales = list(list(alternating=1),x=list(cex = 1,rot=45),y=list(cex=0.8)),)
-
+              main = list(label=paste0("Tabela wyników: ", season_lab), cex=2.4),
+              scales = list(list(alternating=1),x=list(cex = 1,rot=45),y=list(cex=0.8)))
   })
-
+  
   output$table <- renderTable({
     df()
   })
-
+  
   output$NoisyPlot <- renderPlot({
-    O <- ConvFun(dataset())
-    N <- nrow(O)
-    y <- to_adjacency(O, N)
-    season <- input$season
-    objj <- mcmc(season = season, N = N, y = y, O = O)
+    objj <- mcmc_results()
     Noisy_True_K <- objj$Noisy_True_K
     K_maxmax <- objj$K_maxmax
+    
     plot(Noisy_True_K, col="#00000033",ylab="K", xlab=" ", cex.lab=1.7,
          ylim=c(1,K_maxmax+1), yaxt="n")
   })

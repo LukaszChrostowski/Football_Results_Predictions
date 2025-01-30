@@ -19,6 +19,7 @@ load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/d
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2021and2022.Rdata"))
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2022and2023.Rdata"))
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2023and2024.Rdata"))
+load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2024and2025.Rdata"))
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/table_data.Rdata")) # load table for each season
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/number_of_seasons_by_each_club.Rdata")) # load data of seasons number for each club
 
@@ -242,7 +243,4 @@ skimr::skim(data)
 proccessed_data <- data
 file <- paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/output/processed_data.Rdata")
 save(proccessed_data, file = file)
-
-
-
 
