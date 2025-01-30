@@ -2,10 +2,10 @@ library(catboost)
 library(caret)
 library(tidyverse)
 
-load("output_data/processed_data_averages_5.Rdata")
+load("output_data/processed_data_averages_1.Rdata")
 
 # Working version ####
-df <- proccessed_data_averages_5
+df <- proccessed_data_averages_1
 df$`Porażka Gospodarz` <- df$`Porażka Gospodarz` %>% as.numeric()
 df$`Porażka Gość` <- df$`Porażka Gość` %>% as.numeric()
 df$`Remis Gospodarz` <- df$`Remis Gospodarz` %>% as.numeric()
@@ -13,7 +13,8 @@ df$`Remis Gość` <- df$`Remis Gość` %>% as.numeric()
 # These few first records don't have much data
 invalid_cols <- sapply(df, FUN = function(x) {sum(is.na(x))}) / NROW(df) > .1
 invalid_cols <- invalid_cols[invalid_cols] %>% names
-df <- df %>% subset(Sezon != "2012/13") %>% select(!(all_of(invalid_cols)))
+df <- df %>% select(!(all_of(invalid_cols)))
+#df <- df %>% subset(Sezon != "2012/13") %>% select(!(all_of(invalid_cols)))
 
 df <- df %>%
   mutate(
@@ -55,9 +56,11 @@ df <- df %>%
     )
   )
 
+sapply(df, function(x) sum(is.na(x))/length(x) * 100)
+
 # Train test split
-df_train <- df[df$Sezon != "2023/24", ]
-df_test <- df[df$Sezon == "2023/24", ]
+df_train <- df[df$Sezon != "2024/25", ]
+df_test <- df[df$Sezon == "2024/25", ]
 # Imputation
 df_train <- df_train %>% drop_na
 df_test <- df_test %>% drop_na
@@ -70,14 +73,14 @@ df_train <- model.matrix(
   Wynik ~ possession_diff + shots_diff + attack_ratio +
     forma_diff + defensive_strength_home + defensive_strength_away +
     shooting_accuracy_home + shooting_accuracy_away + shot_efficiency_diff +
-    discipline_ratio - 1,
+    discipline_ratio + LowerLeague_Home + LowerLeague_Away - 1,
     df_train
 )
 df_test <- model.matrix(
   Wynik ~ possession_diff + shots_diff + attack_ratio +
     forma_diff + defensive_strength_home + defensive_strength_away +
     shooting_accuracy_home + shooting_accuracy_away + shot_efficiency_diff +
-    discipline_ratio - 1,
+    discipline_ratio + LowerLeague_Home + LowerLeague_Away - 1,
   df_test
 )
 # df_train <- cbind(

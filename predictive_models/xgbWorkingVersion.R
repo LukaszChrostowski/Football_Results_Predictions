@@ -64,7 +64,7 @@ cor_data <- df %>%
 cor_matrix <- cor(cor_data, use = "pairwise.complete.obs")
 
 # Znajdujemy silne korelacje (np. > 0.7 lub < -0.7)
-high_cors <- which(abs(cor_matrix) > 0.7 & cor_matrix < 0.999, arr.ind = TRUE)
+high_cors <- which(abs(cor_matrix) > 0.6 & cor_matrix < 0.999, arr.ind = TRUE)
 
 # Tworzymy ramkę danych z wynikami
 high_cor_pairs <- data.frame(
@@ -78,8 +78,8 @@ high_cor_pairs <- data.frame(
 print(high_cor_pairs)
 
 # Train test split
-df_train <- df[df$Sezon != "2023/24", ]
-df_test <- df[df$Sezon == "2023/24", ]
+df_train <- df[df$Sezon != "2024/25", ]
+df_test <- df[df$Sezon == "2024/25", ]
 # Imputation
 df_train <- df_train %>% drop_na
 df_test <- df_test %>% drop_na
@@ -92,14 +92,16 @@ df_train <- model.matrix(
   Wynik ~ possession_diff + shots_diff + attack_ratio +
     forma_diff + defensive_strength_home + defensive_strength_away +
     shooting_accuracy_home + shooting_accuracy_away + shot_efficiency_diff +
-    discipline_ratio - 1,
+    discipline_ratio + LowerLeague_Home + LowerLeague_Away - 1,
   rbind(df_train, df_test)
 )
 df_test <- df_train[-(1:N),]
 df_train <- df_train[1:N,]
 
 label_train <- df_train_y$Wynik %>% as.numeric() - 1
+pos_weights = 1 / (table(label_train) / length(label_train)) # wagi 
 label_test <- df_test_y$Wynik %>% as.numeric() - 1
+# A = 0, D = 1, H = 2
 
 if (evaluate) {
   # Definiowanie siatki parametrów do przeszukania
@@ -184,7 +186,8 @@ xgb_model <- xgb.train(
     num_class = 3,
     eta = 0.01,
     max_depth = 3,
-    alpha = 0
+    alpha = 0,
+    scale_pos_weight = pos_weights  # wagi dla każdej klasy
   )
 )
 
@@ -192,11 +195,18 @@ xgb_model$evaluation_log$test_merror %>% min
 xgb_model$evaluation_log$test_merror %>% which.min
 
 # the best results for form based on 1 and 5 previous games
+# final error: 0.5172414
 
 importance_matrix <- xgb.importance(model = xgb_model)
 print(importance_matrix)
 
 # With visualization
 xgb.plot.importance(importance_matrix)
+
+# confusion matrix
+predictions <- predict(xgb_model, newdata = test_pool)
+pred_classes <- max.col(matrix(predictions, ncol = 3, byrow = TRUE)) - 1
+confusion_matrix <- confusionMatrix(factor(pred_classes), factor(label_test))
+print(confusion_matrix)
 
 saveRDS(xgb_model, "saved_models/xgb_model.rds")

@@ -20,8 +20,8 @@ load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/d
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2022and2023.Rdata"))
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2023and2024.Rdata"))
 load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/scrapedData2024and2025.Rdata"))
-load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/table_data.Rdata")) # load table for each season
-load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/number_of_seasons_by_each_club.Rdata")) # load data of seasons number for each club
+# load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/table_data.Rdata")) # load table for each season
+# load(paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/data/number_of_seasons_by_each_club.Rdata")) # load data of seasons number for each club
 
 # number of data columns for each season
 dataframes <- list(scrapedData2012and2013, scrapedData2013and2014, scrapedData2014and2015, scrapedData2015and2016,
@@ -101,7 +101,7 @@ joined_df_22_23 <- merge(new_scrapedData2022and2023, df_21_22, by.x = "Gospodarz
 joined_df_23_24 <- merge(new_scrapedData2023and2024, df_22_23, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
   merge(df_22_23, by.x = "Gość", by.y = "team", all.x = TRUE)
 
-joined_df_24_25 <- merge(new_scrapedData2023and2024, df_22_23, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
+joined_df_24_25 <- merge(new_scrapedData2024and2025, df_23_24, by.x = "Gospodarz", by.y = "team", all.x = TRUE) %>% 
   merge(df_23_24, by.x = "Gość", by.y = "team", all.x = TRUE)
 
 joined_data_12_13 <- merge(joined_df_12_13, df1 %>% select(club, season12.13), by.x = "Gospodarz", by.y = "club", all.x = TRUE) %>% merge(df1 %>% select(club, season12.13), by.x = "Gość", by.y = "club", all.x = TRUE)
@@ -241,6 +241,6 @@ data <- data_cleaning(all_seasons)
 skimr::skim(data)
 
 proccessed_data <- data
-file <- paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/output/processed_data.Rdata")
+file <- paste0(paste(strsplit(getwd(), split = "/")[[1]][1:5], collapse = "/"), "/output_data/processed_data.Rdata")
 save(proccessed_data, file = file)
 
