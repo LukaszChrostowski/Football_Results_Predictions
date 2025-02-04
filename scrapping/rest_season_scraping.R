@@ -1,3 +1,8 @@
+########################################################################
+######################### 98/99 - 11/12 RESULTS SCRAPING ##################
+########################################################################
+
+
 # load packages
 library(tidyverse)
 library(RSelenium)
@@ -17,11 +22,6 @@ load("~/Desktop/Football_Results_Predictions/data/scrapedData2021and2022.Rdata")
 load("~/Desktop/Football_Results_Predictions/data/scrapedData2022and2023.Rdata")
 load("~/Desktop/Football_Results_Predictions/data/scrapedData2023and2024.Rdata")
 load("~/Desktop/Football_Results_Predictions/data/scrapedData2024and2025.Rdata")
-
-# seleniumServer <- rsDriver(browser = "chrome",
-#                            #verbose = FALSE,
-#                            port = free_port(),
-#                            chromever = "106.0.5249.21")
 
 seleniumServer <- rsDriver(browser = "firefox",
                              #verbose = FALSE,

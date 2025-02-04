@@ -10,6 +10,7 @@ library(bslib)
 # Wczytanie danych
 load("output_data/processed_data.Rdata")
 load("data/contingency_table_update.Rdata")
+load("data/elo_ranking.Rdata")
 df <- proccessed_data
 
 # Funkcje pomocnicze
@@ -149,7 +150,27 @@ ui <- fluidPage(
                    # Panel statystyk
                    wellPanel(
                      style = "background-color: #202020;",
-                     h4("Forma gospodarzy (ostatni mecz)"),
+                     
+                     # Dodanie wyboru drużyn i średniego wieku
+                     h4("Wybór drużyn"),
+                     fluidRow(
+                       column(6,
+                              selectInput("home_team", "Drużyna gospodarzy:",
+                                          choices = unique(df$Gospodarz),
+                                          selected = "Lech Poznań"),
+                              numericInput("home_avg_age", "Średni wiek zawodników gospodarzy:",
+                                           value = 25, min = 18, max = 40, step = 0.1)
+                       ),
+                       column(6,
+                              selectInput("away_team", "Drużyna gości:",
+                                          choices = unique(df$Gość),
+                                          selected = "Legia Warszawa"),
+                              numericInput("away_avg_age", "Średni wiek zawodników gości:",
+                                           value = 25, min = 18, max = 40, step = 0.1)
+                       )
+                     ),
+                     
+                     h4("Forma gospodarzy (ostatnie 3 mecze)"),
                      fluidRow(
                        column(6,
                               numericInput("home_goals_scored", "Średnia strzelonych goli:",
@@ -165,7 +186,7 @@ ui <- fluidPage(
                        )
                      ),
                      
-                     h4("Forma gości (ostatni mecz)"),
+                     h4("Forma gości (ostatnie 3 mecze)"),
                      fluidRow(
                        column(6,
                               numericInput("away_goals_scored", "Średnia strzelonych goli:",
@@ -181,7 +202,7 @@ ui <- fluidPage(
                        )
                      ),
                      
-                     h4("Statystyki z ostatniego meczu"),
+                     h4("Statystyki z ostatnich 3 meczów"),
                      fluidRow(
                        column(6,
                               numericInput("home_possession", "Posiadanie piłki gospodarzy (%):",
@@ -198,6 +219,8 @@ ui <- fluidPage(
                                            value = 0, min = 0, max = 5)
                        ),
                        column(6,
+                              numericInput("away_possession", "Posiadanie piłki gości (%):",
+                                           value = 50, min = 0, max = 100),
                               numericInput("away_shots_on_target", "Strzały celne gości:",
                                            value = 5, min = 0, max = 20),
                               numericInput("away_shots_off_target", "Strzały niecelne gości:",
@@ -625,6 +648,9 @@ server <- function(input, output) {
     input$predict,
     {
       
+      # form_base <- Wynik ~ possession_diff + shots_diff + attack_ratio +
+      # forma_diff + defensive_strength_home + defensive_strength_away + shot_efficiency_diff +
+      #   discipline_ratio + elo_diff + wiek_diff + league_level_advantage  - 1
       # Przygotowanie danych
       pred_vector <- numeric(10)
       names(pred_vector) <- c(
@@ -634,15 +660,14 @@ server <- function(input, output) {
           "forma_diff",
           "defensive_strength_home",
           "defensive_strength_away",
-          "shooting_accuracy_home",
-          "shooting_accuracy_away",
           "shot_efficiency_diff",
-          "discipline_ratio"
+          "discipline_ratio",
+          "elo_diff",
+          "wiek_diff"
       )
       
-      
       # Ustawienie pozostałych zmiennych
-      pred_vector["possession_diff"] <- input$home_possession - (100 - input$home_possession)
+      pred_vector["possession_diff"] <- input$home_possession - input$away_possession
       
       pred_vector["shots_diff"] <- (input$home_shots_on_target + input$home_shots_off_target) - 
         (input$away_shots_on_target + input$away_shots_off_target)
@@ -659,14 +684,14 @@ server <- function(input, output) {
       pred_vector["defensive_strength_away"] <- input$away_goals_conceded / 
         (input$home_shots_on_target + input$home_shots_off_target)
       
-      pred_vector["shooting_accuracy_home"] <- input$home_shots_on_target / 
+      shooting_accuracy_home <- input$home_shots_on_target / 
         (input$home_shots_on_target + input$home_shots_off_target)
       
-      pred_vector["shooting_accuracy_away"] <- input$away_shots_on_target / 
+      shooting_accuracy_away <- input$away_shots_on_target / 
         (input$away_shots_on_target + input$away_shots_off_target)
       
-      pred_vector["shot_efficiency_diff"] <- pred_vector["shooting_accuracy_home"] - 
-        pred_vector["shooting_accuracy_away"]
+      pred_vector["shot_efficiency_diff"] <- shooting_accuracy_home - 
+        shooting_accuracy_away
       
       pred_vector["discipline_ratio"] <- ifelse(
         (input$away_yellow_cards + input$away_red_cards * 2) == 0,
@@ -674,6 +699,8 @@ server <- function(input, output) {
         (input$home_yellow_cards + input$home_red_cards * 2) /
           (input$away_yellow_cards + input$away_red_cards * 2)
       )
+      pred_vector["elo_diff"] <- elo_df[elo_df$Player == input$home_team, "Rating"] - elo_df[elo_df$Player == input$away_team, "Rating"]
+      pred_vector["wiek_diff"] <- input$home_avg_age - input$away_avg_age
       
       input_matrix <- matrix(pred_vector, nrow = 1)
       pred_matrix <- xgb.DMatrix(input_matrix)

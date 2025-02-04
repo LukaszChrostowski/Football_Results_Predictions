@@ -1,14 +1,11 @@
+######################################################
+######################### STANDING TABLES ##################
+######################################################
+
 # load packages
 library(tidyverse)
 library(RSelenium)
 library(netstat)
-
-# start the server
-
-# rs_driver_object <- rsDriver(browser = 'chrome',
-#                              chromever = "106.0.5249.21",
-#                              verbose = FALSE,
-#                              port = free_port())
 
 rs_driver_object <- rsDriver(browser = "firefox",
                              #verbose = FALSE,

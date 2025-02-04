@@ -1,3 +1,7 @@
+########################################################################
+######################### 12/13 - 24/25 RESULTS/STATS SCRAPING ##################
+########################################################################
+
 ## Scraping from https://www.wynikinazywo.pl/
 
 #install.packages("RSelenium") you also need to install java for this

@@ -1,57 +1,9 @@
 library(xgboost)
 library(caret)
-library(tidyverse)
 library(ggplot2)
-load("output_data/processed_data_averages_1.Rdata")
 
+# TODO load(data_for_ml) df
 evaluate <- FALSE ## Whether grid search of xgboost params should be run
-df <- proccessed_data_averages_1
-df$`Porażka Gospodarz` <- df$`Porażka Gospodarz` %>% as.numeric()
-df$`Porażka Gość` <- df$`Porażka Gość` %>% as.numeric()
-df$`Remis Gospodarz` <- df$`Remis Gospodarz` %>% as.numeric()
-df$`Remis Gość` <- df$`Remis Gość` %>% as.numeric()
-# These few first records don't have much data
-invalid_cols <- sapply(df, FUN = function(x) {sum(is.na(x))}) / NROW(df) > .1
-invalid_cols <- invalid_cols[invalid_cols] %>% names
-# TODO df <- df %>% subset(Sezon != "2012/13") %>% select(!(all_of(invalid_cols)))
-df <- df %>% select(!(all_of(invalid_cols)))
-
-df <- df %>%
-  mutate(
-    possession_diff = `Posiadanie piłki Gospodarz` - `Posiadanie piłki Gość`,
-    
-    shots_diff = (`Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz`) - 
-      (`Strzały na bramkę Gość` + `Strzały niecelne Gość`),
-    
-    attack_ratio = (`Gole Gospodarz` / (`Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz`)) - 
-      (`Gole Gość` / (`Strzały na bramkę Gość` + `Strzały niecelne Gość`)),
-    
-    dominance_index = (`Posiadanie piłki Gospodarz` * (`Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz`)) / 
-      (`Posiadanie piłki Gość` * (`Strzały na bramkę Gość` + `Strzały niecelne Gość`)),
-    
-    possession_efficiency_home = `Gole Gospodarz` / `Posiadanie piłki Gospodarz`,
-    possession_efficiency_away = `Gole Gość` / `Posiadanie piłki Gość`,
-    
-    forma_diff = ((`Porażka Gość` * 3 + `Remis Gość` * 1) - 
-                    (`Porażka Gospodarz` * 3 + `Remis Gospodarz` * 1)),
-    
-    defensive_strength_home = `Gole stracone Gospodarz` / (`Strzały na bramkę Gość` + `Strzały niecelne Gość`),
-    defensive_strength_away = `Gole stracone Gość` / (`Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz`),
-    
-    shooting_accuracy_home = `Strzały na bramkę Gospodarz` / (`Strzały na bramkę Gospodarz` + `Strzały niecelne Gospodarz`),
-    shooting_accuracy_away = `Strzały na bramkę Gość` / (`Strzały na bramkę Gość` + `Strzały niecelne Gość`),
-    shot_efficiency_diff = shooting_accuracy_home - shooting_accuracy_away,
-    
-    discipline_ratio = ifelse(
-      (`Żółte kartki Gość` + `Czerwone kartki Gość` * 2) == 0,
-      NA,  # lub inna wartość zastępcza
-      (`Żółte kartki Gospodarz` + `Czerwone kartki Gospodarz` * 2) /
-        (`Żółte kartki Gość` + `Czerwone kartki Gość` * 2)
-    )
-  )
-
-# df check NA 
-sapply(df, function(x) sum(is.na(x))/length(x) * 100)
 
 # corr matrix
 
@@ -64,7 +16,7 @@ cor_data <- df %>%
 cor_matrix <- cor(cor_data, use = "pairwise.complete.obs")
 
 # Znajdujemy silne korelacje (np. > 0.7 lub < -0.7)
-high_cors <- which(abs(cor_matrix) > 0.6 & cor_matrix < 0.999, arr.ind = TRUE)
+high_cors <- which(abs(cor_matrix) > 0.1 & cor_matrix < 0.999, arr.ind = TRUE)
 
 # Tworzymy ramkę danych z wynikami
 high_cor_pairs <- data.frame(
@@ -88,18 +40,34 @@ df_test <- df_test %>% drop_na
 df_train_y <- df_train %>% select("Wynik")
 df_test_y <- df_test %>% select("Wynik")
 N <- NROW(df_train)
+
+# formulas to model
+# base formula
+form_base <- Wynik ~ possession_diff + shots_diff + attack_ratio +
+  forma_diff + defensive_strength_home + defensive_strength_away + shot_efficiency_diff +
+  discipline_ratio + elo_diff + wiek_diff  - 1
+# advanced formula based on corr matrix
+form_adv <- Wynik ~ possession_diff + dominance_index + 
+  forma_diff + defensive_strength_home + defensive_strength_away + 
+  shooting_accuracy_home + shooting_accuracy_away + 
+  discipline_ratio + elo_diff + market_values_diff + 
+  league_level_advantage + match_week - 1
 df_train <- model.matrix(
-  Wynik ~ possession_diff + shots_diff + attack_ratio +
-    forma_diff + defensive_strength_home + defensive_strength_away +
-    shooting_accuracy_home + shooting_accuracy_away + shot_efficiency_diff +
-    discipline_ratio + LowerLeague_Home + LowerLeague_Away - 1,
+  form_base,
   rbind(df_train, df_test)
 )
 df_test <- df_train[-(1:N),]
 df_train <- df_train[1:N,]
 
+# Correct approach
 label_train <- df_train_y$Wynik %>% as.numeric() - 1
-pos_weights = 1 / (table(label_train) / length(label_train)) # wagi 
+classes <- table(label_train)
+# Make sure we're properly indexing
+pos_weights <- 1 / classes[as.character(label_train)]  # Add as.character()
+weights <- pos_weights * length(label_train)
+
+# Verify
+print(length(weights))  # Should now be 3400
 label_test <- df_test_y$Wynik %>% as.numeric() - 1
 # A = 0, D = 1, H = 2
 
@@ -125,7 +93,7 @@ if (evaluate) {
       data = train_pool,
       params = list(
         objective = "multi:softprob",
-        eval_metric = "merror",
+        eval_metric = "auc",
         num_class = num_class,
         eta = params$eta,
         max_depth = params$max_depth,
@@ -162,7 +130,7 @@ if (evaluate) {
   }
   
   # Znalezienie najlepszych parametrów
-  best_params <- results[which.min(results$best_score), ]
+  best_params <- results[which.max(results$best_score), ]
   print("Najlepsze parametry:")
   print(best_params)
   # eta = 0.01
@@ -170,32 +138,48 @@ if (evaluate) {
   # alpha = 0
 }
 
-train_pool <- xgb.DMatrix(data = df_train, label = label_train)
+train_pool <- xgb.DMatrix(data = df_train,
+                          #weights = weights,
+                          label = label_train)
 test_pool <- xgb.DMatrix(data = df_test, label = label_test)
 
 watchlist <- list(train = train_pool, test = test_pool)
-
+set.seed(1000)
 # Trenowanie końcowego modelu z najlepszymi parametrami
 xgb_model <- xgb.train(
   watchlist = watchlist,
   nrounds = 5000,
   data = train_pool,
+  early_stopping_rounds=1000,
   params = list(
     objective = "multi:softprob",
     eval_metric = "merror",
     num_class = 3,
-    eta = 0.01,
+    eta = 0.001,
     max_depth = 3,
-    alpha = 0,
-    scale_pos_weight = pos_weights  # wagi dla każdej klasy
+    alpha = 0.1,
+    min_child_weight = 5
+    # subsample = 0.9
+    # colsample_bytree = 0.8
+    # lambda = 10
   )
 )
 
 xgb_model$evaluation_log$test_merror %>% min
 xgb_model$evaluation_log$test_merror %>% which.min
+# AUC 
+# xgb_model$evaluation_log$test_auc %>% max
+# xgb_model$evaluation_log$test_auc %>% which.max
 
-# the best results for form based on 1 and 5 previous games
-# final error: 0.5172414
+# the best results for form based
+# number of last games 3
+# params
+# num_class = 3,
+# eta = 0.005,
+# max_depth = 3
+# min_child_weight = 5
+# alpha = 0.1
+# final error: 0.4183007
 
 importance_matrix <- xgb.importance(model = xgb_model)
 print(importance_matrix)
