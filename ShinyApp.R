@@ -7,15 +7,15 @@ library(lattice)
 library(xgboost)
 library(bslib)
 
-# Wczytanie danych
+# Data loading
 load("output_data/processed_data.Rdata")
 load("data/contingency_table_update.Rdata")
 load("data/elo_ranking.Rdata")
 df <- proccessed_data
 
-# Funkcje pomocnicze
+# some helpers
 ConvFun <- function(data) {
-  data[data == "H"] <- 1
+  data[data == "H"] <- 1 
   data[data == "D"] <- 2
   data[data == "A"] <- 3
   
@@ -49,30 +49,29 @@ ui <- fluidPage(
     code_font = font_google("JetBrains Mono")
   ),
   
-  titlePanel("Raport Analityczny - Ekstraklasa"),
+  titlePanel("Analytics Report - Polish Ekstraklasa"),
   
   sidebarLayout(
       sidebarPanel(
         
         selectInput("club",
-                    label = "Klub",
+                    label = "Club",
                     choices = unique(df$Gospodarz),
                     selected = "Lech Poznań"),
         
         selectInput("season",
-                    label = "Sezon",
+                    label = "Season",
                     choices = as.vector(unique(df$Sezon)),
                     selected = "2023/24"),
         tags$div(
-          tags$p(style = "font-size: 14px;", "Wybierz klub, aby zobaczyć szczegółową analizę statystyk drużyny w sekcji Analiza Klubu.
-                 Statystyki dotyczą wszystkich dostępnych sezonów."),
-          tags$p(style = "font-size: 14px;", "Wybierz Sezon aby zobaczyć ogólne statystyki z danego sezonu w sekcji Analiza Sezonu."),
-          tags$p(style = "font-size: 14px;", "Sekcja Analiza Predykcyjna służy do predykcji meczów na podstawie formy z ostatniego meczu.")
+          tags$p(style = "font-size: 14px;", "Select a club to see a detailed analysis of the team statistics in the Club Analysis section. Statistics are for all available seasons."),
+          tags$p(style = "font-size: 14px;", "Select a Season to view general statistics from that season in the Season Analysis section."),
+          tags$p(style = "font-size: 14px;", "The Predictive Analysis section is used to predict matches based on performance from the last match.")
         ),
         
         tags$div(
           tags$hr(),  # Dodanie poziomej linii dla oddzielenia
-          tags$p(style = "font-size: 12px;", "Źródło: ", tags$a(href = "https://github.com/LukaszChrostowski/Football_Results_Predictions", 
+          tags$p(style = "font-size: 12px;", "Source: ", tags$a(href = "https://github.com/LukaszChrostowski/Football_Results_Predictions", 
                                          target = "_blank", "GitHub"))
         )
     ),
@@ -80,28 +79,28 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(
         # Zakładka Analiza Klubu
-        tabPanel("Analiza Klubu",
+        tabPanel("Club Analysis",
                  
                  # selectInput("club", 
                  #             label = "Klub",
                  #             choices = unique(df$Gospodarz), 
                  #             selected = "Lech Poznań"),
                  
-                 h3("Z kim klub mierzył się najczęściej?"),
+                 h3("Who has the club faced most often?"),
                  plotlyOutput("najczestsze_mecze"),
                  
-                 h3("Z kim klub wygrywał najczęściej?"),
+                 h3("Who has the club won against most often?"),
                  plotlyOutput("najczestsze_wygrane"),
                  
-                 h3("Z kim klub remisował najczęściej?"),
+                 h3("Who has the club drawn with most often?"),
                  plotlyOutput("najczestsze_remisy"),
                  
-                 h3("Z kim klub przegrywał najczęściej?"),
+                 h3("Who has the club lost to most often?"),
                  plotlyOutput("najczestsze_porazki")
         ),
         
         # Zakładka Analiza Sezonu
-        tabPanel("Analiza Sezonu",
+        tabPanel("Season Analysis",
                  
                  # selectInput("season", 
                  #             label = "Sezon",
@@ -111,39 +110,39 @@ ui <- fluidPage(
                  # h3("Tabela końcowa"),
                  # plotOutput("table"),
                  
-                 h3("Heat Mapa wyników"),
+                 h3("Results Heat Map"),
                  plotOutput("heatmap_wynikow", height = "650px"),
                  
                  # h3("Konkurencyjność Sezonu"),
                  # plotOutput("competetiveness"),
                  
-                 h3("Rozkład wyników"),
+                 h3("Distribution of Results"),
                  plotlyOutput("rozklad_wynikow"),
                  
-                 h3("Rozkład Goli"),
+                 h3("Distribution of Goals"),
                  plotlyOutput("rozklad_goli"),
                  
-                 h3("Liczba Goli w Sezonie"),
+                 h3("Number of Goals in the Season"),
                  plotlyOutput("gole_sezon"),
                  
-                 h3("Najskuteczniejsze Zespoły"),
+                 h3("Most Effective Teams"),
                  plotlyOutput("najskuteczniejsze_zespoly"),
                  
-                 h3("Ranking Zespołów według czerwonych kartek"),
+                 h3("Teams Ranking by Red Cards"),
                  plotlyOutput("czerwone_kartki"),
                  
-                 h3("Ranking Zespołów według żółtych kartek"),
+                 h3("Teams Ranking by Yellow Cards"),
                  plotlyOutput("zolte_kartki"),
                  
-                 h3("Liczba Meczów w miesiącu"),
+                 h3("Number of Matches per Month"),
                  plotlyOutput("mecze_miesiac"),
                  
-                 h3("Liczba meczów o danej godzinie"),
+                 h3("Number of Matches at a Specific Time"),
                  plotlyOutput("mecze_godzina")
         ),
         
         # Zakładka Analiza Predykcyjna
-        tabPanel("Analiza Predykcyjna",
+        tabPanel("Predictive Analysis",
                  div(
                    style = "max-width: 1200px; margin: 0 auto;",
                    
@@ -152,84 +151,84 @@ ui <- fluidPage(
                      style = "background-color: #202020;",
                      
                      # Dodanie wyboru drużyn i średniego wieku
-                     h4("Wybór drużyn"),
+                     h4("Team Selection"),
                      fluidRow(
                        column(6,
-                              selectInput("home_team", "Drużyna gospodarzy:",
+                              selectInput("home_team", "Home team:",
                                           choices = unique(df$Gospodarz),
                                           selected = "Lech Poznań"),
-                              numericInput("home_avg_age", "Średni wiek zawodników gospodarzy:",
+                              numericInput("home_avg_age", "Average age of home team players:",
                                            value = 25, min = 18, max = 40, step = 0.1)
                        ),
                        column(6,
-                              selectInput("away_team", "Drużyna gości:",
+                              selectInput("away_team", "Away Team:",
                                           choices = unique(df$Gość),
                                           selected = "Legia Warszawa"),
-                              numericInput("away_avg_age", "Średni wiek zawodników gości:",
+                              numericInput("away_avg_age", "Average age of away team players:",
                                            value = 25, min = 18, max = 40, step = 0.1)
                        )
                      ),
                      
-                     h4("Forma gospodarzy (ostatnie 3 mecze)"),
+                     h4("Home team form (last 3 matches)"),
                      fluidRow(
                        column(6,
-                              numericInput("home_goals_scored", "Średnia strzelonych goli:",
+                              numericInput("home_goals_scored", "Average goals scored::",
                                            value = 1.5, min = 0, max = 5, step = 0.1),
-                              numericInput("home_goals_conceded", "Średnia straconych goli:",
+                              numericInput("home_goals_conceded", "Average goals conceded::",
                                            value = 1.0, min = 0, max = 5, step = 0.1)
                        ),
                        column(6,
-                              numericInput("home_losses", "Liczba porażek:",
+                              numericInput("home_losses", "Number of losses:",
                                            value = 2, min = 0, max = 7),
-                              numericInput("home_draws", "Liczba remisów:",
+                              numericInput("home_draws", "Number of draws:",
                                            value = 2, min = 0, max = 7)
                        )
                      ),
                      
-                     h4("Forma gości (ostatnie 3 mecze)"),
+                     h4("Away team form (last 3 matches)"),
                      fluidRow(
                        column(6,
-                              numericInput("away_goals_scored", "Średnia strzelonych goli:",
+                              numericInput("away_goals_scored", "Average goals scored:",
                                            value = 1.5, min = 0, max = 5, step = 0.1),
-                              numericInput("away_goals_conceded", "Średnia straconych goli:",
+                              numericInput("away_goals_conceded", "Average goals conceded:",
                                            value = 1.0, min = 0, max = 5, step = 0.1)
                        ),
                        column(6,
-                              numericInput("away_losses", "Liczba porażek:",
+                              numericInput("away_losses", "Number of losses:",
                                            value = 2, min = 0, max = 7),
-                              numericInput("away_draws", "Liczba remisów:",
+                              numericInput("away_draws", "Number of draws:",
                                            value = 2, min = 0, max = 7)
                        )
                      ),
                      
-                     h4("Statystyki z ostatnich 3 meczów"),
+                     h4("Statistics from the last 3 matches"),
                      fluidRow(
                        column(6,
-                              numericInput("home_possession", "Posiadanie piłki gospodarzy (%):",
+                              numericInput("home_possession", "Home team possession (%):",
                                            value = 50, min = 0, max = 100),
-                              numericInput("home_shots_on_target", "Strzały celne gospodarzy:",
+                              numericInput("home_shots_on_target", "Home team shots on target:",
                                            value = 5, min = 0, max = 20),
-                              numericInput("home_shots_off_target", "Strzały niecelne gospodarzy:",
+                              numericInput("home_shots_off_target", "Home team shots off target:",
                                            value = 3, min = 0, max = 20),
-                              numericInput("home_corners", "Rzuty rożne gospodarzy:",
+                              numericInput("home_corners", "Home team corners:",
                                            value = 5, min = 0, max = 15),
-                              numericInput("home_yellow_cards", "Żółte kartki gospodarzy:",
+                              numericInput("home_yellow_cards", "Home team yellow cards:",
                                            value = 2, min = 0, max = 10),
-                              numericInput("home_red_cards", "Czerwone kartki gospodarzy:",
+                              numericInput("home_red_cards", "Home team red cards:",
                                            value = 0, min = 0, max = 5)
                        ),
                        column(6,
-                              numericInput("away_possession", "Posiadanie piłki gości (%):",
+                              numericInput("away_possession", "Away team possession (%):",
                                            value = 50, min = 0, max = 100),
-                              numericInput("away_shots_on_target", "Strzały celne gości:",
+                              numericInput("away_shots_on_target", "Away team shots on target:",
                                            value = 5, min = 0, max = 20),
-                              numericInput("away_shots_off_target", "Strzały niecelne gości:",
+                              numericInput("away_shots_off_target", "Away team shots off target:",
                                            value = 3, min = 0, max = 20),
-                              numericInput("away_corners", "Rzuty rożne gości:",
+                              numericInput("away_corners", "Away team corners:",
                                            value = 5, min = 0, max = 15),
-                              numericInput("away_yellow_cards", "Żółte kartki gości:",
+                              numericInput("away_yellow_cards", "Away team yellow cards:",
                                            value = 2, min = 0, max = 10),
-                              numericInput("away_red_cards", "Czerwone kartki gości:",
+                              numericInput("away_red_cards", "Away team red cards:",
                                            value = 0, min = 0, max = 5)
                        )
                      )
@@ -238,7 +237,7 @@ ui <- fluidPage(
                    # Panel predykcji
                    div(
                      style = "text-align: center; margin: 20px;",
-                     actionButton("predict", "Przewiduj wynik",
+                     actionButton("predict", "Predict Result",
                                   class = "btn-primary btn-lg")
                    ),
                    wellPanel(
@@ -284,8 +283,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
         geom_bar(stat = "identity") +
-        xlab("Klub") +
-        ylab("Liczba meczy") +
+        xlab("Club") +
+        ylab("Number of Games") +
         scale_fill_manual(values = 1:nrow(merge_df)) +
         guides(fill = FALSE) +
         theme_dark()
@@ -316,8 +315,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
         geom_bar(stat = "identity") +
-        xlab("Klub") +
-        ylab("Liczba wygranych") +
+        xlab("Club") +
+        ylab("Number of Games") +
         scale_fill_manual(values = 1:nrow(merge_df)) +
         guides(fill = FALSE) +
         theme_dark()
@@ -348,8 +347,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
         geom_bar(stat = "identity") +
-        xlab("Klub") +
-        ylab("Liczba remisów") +
+        xlab("Club") +
+        ylab("Number of Games") +
         scale_fill_manual(values = 1:nrow(merge_df)) +
         guides(fill = FALSE) +
         theme_dark()
@@ -380,8 +379,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = merge_df, aes(x = factor(Club, levels = Club), y = n, fill = Club)) +
         geom_bar(stat = "identity") +
-        xlab("Klub") +
-        ylab("Liczba porażek") +
+        xlab("Club") +
+        ylab("Number of Loses") +
         scale_fill_manual(values = 1:nrow(merge_df)) +
         guides(fill = FALSE) +
         theme_dark()
@@ -466,8 +465,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = df_filtered, aes(x = Wynik, fill = Wynik)) +
         geom_bar() +
-        ylab("Liczba Wyników") +
-        xlab("Wynik") +
+        ylab("Number of Results") +
+        xlab("Result") +
         scale_fill_manual(values = unique(df_filtered$Wynik)) +
         guides(fill = FALSE) +
         theme_dark()
@@ -481,7 +480,7 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = df_filtered, aes(x = `Gole Gospodarz` + `Gole Gość`)) +
         geom_histogram(bins = 10, color = "black", fill = "white") +
-        xlab("Liczba goli w meczu") +
+        xlab("Number of Goals in the Match") +
         theme_dark()
     )
   })
@@ -497,8 +496,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = goals_by_season, aes(x = Sezon, y = sum, fill = Sezon)) +
         geom_bar(stat = "identity") +
-        xlab("Sezon") +
-        ylab("Liczba goli") +
+        xlab("Season") +
+        ylab("Number of Goals") +
         scale_fill_manual(values = 1:nrow(goals_by_season)) +
         guides(fill = FALSE) +
         theme_dark()
@@ -527,8 +526,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = goals_by_club, aes(x = factor(Klub, levels = Klub), y = gole, fill = Klub)) +
         geom_bar(stat = "identity") +
-        xlab("Klub") +
-        ylab("Liczba goli") +
+        xlab("Club") +
+        ylab("Number of Goals") +
         scale_fill_manual(values = 1:nrow(goals_by_club)) +
         guides(fill = FALSE) +
         theme_dark() +
@@ -556,8 +555,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = red_cards_by_club, aes(x = factor(Club, levels = Club), y = red_cards, fill = Club)) +
         geom_bar(stat = "identity") +
-        xlab("Klub") +
-        ylab("Liczba czerwonych kartek") +
+        xlab("Club") +
+        ylab("Number of Red Cards") +
         scale_fill_manual(values = 1:nrow(red_cards_by_club)) +
         guides(fill = FALSE) +
         theme_dark() +
@@ -585,8 +584,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = yellow_cards_by_club, aes(x = factor(Club, levels = Club), y = yellow_cards, fill = Club)) +
         geom_bar(stat = "identity") +
-        xlab("Klub") +
-        ylab("Liczba żółtych kartek") +
+        xlab("Club") +
+        ylab("Number of Yellow Cards") +
         scale_fill_manual(values = 1:nrow(yellow_cards_by_club)) +
         guides(fill = FALSE) +
         theme_dark() +
@@ -609,8 +608,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = df_date, aes(x = month, y = n, fill = month)) +
         geom_bar(stat = "identity") +
-        xlab("Miesiąc") +
-        ylab("Liczba meczy") +
+        xlab("Month") +
+        ylab("Number of Games") +
         scale_fill_manual(values = 1:nrow(df_date)) +
         guides(fill = FALSE) +
         theme_dark() +
@@ -633,8 +632,8 @@ server <- function(input, output) {
     ggplotly(
       ggplot(data = df_date, aes(x = hour, y = n, fill = hour)) +
         geom_bar(stat = "identity") +
-        xlab("Godzina meczu") +
-        ylab("Liczba meczów") +
+        xlab("Time of Game") +
+        ylab("Number of Games") +
         scale_fill_manual(values = 1:nrow(df_date)) +
         guides(fill = FALSE) +
         theme_dark()
@@ -707,9 +706,9 @@ server <- function(input, output) {
       pred_prob <- predict(xgb_model, pred_matrix)
       
       paste(
-        sprintf("\nWygrana Gospodarz: %.1f%%", pred_prob[3] * 100),
-        sprintf("\nRemis: %.1f%%", pred_prob[2] * 100),
-        sprintf("\nWygrana Gość: %.1f%%", pred_prob[1] * 100),
+        sprintf("\nHome Win: %.1f%%", pred_prob[3] * 100),
+        sprintf("\nDraw: %.1f%%", pred_prob[2] * 100),
+        sprintf("\nAway Win: %.1f%%", pred_prob[1] * 100),
         sep = "\n"
       )
     },

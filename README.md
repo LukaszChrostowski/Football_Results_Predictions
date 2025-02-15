@@ -5,3 +5,4 @@ The goal of Football_Results_Predictions is to classify football matches in term
 Data are drawn from <https://www.wynikinazywo.pl/>.
 
 You can see the basic data analysis and games predictions tool in a draft version by running the [ShinyApp](https://lukaszchro.shinyapps.io/Football_Results_Predictions/).
+
