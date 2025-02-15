@@ -1,0 +1,13 @@
+name: GamesPredictor
+title: GamesPredictor
+username: lukaszchro
+account: lukaszchro
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14008388
+bundleId: 9804309
+url: https://lukaszchro.shinyapps.io/GamesPredictor/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: _workflowr.yml|.gitattributes|.RData|.Rprofile|outdated/Dashboard.Rmd|pictures/feature_importance.png|README.md|assessing_competetive_balance|catboost_info|cleaning|docs|scrapping
